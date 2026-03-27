@@ -1,0 +1,119 @@
+{% extends "base/owner_base.html" %}
+
+{% block title %}{% if product %}Edit Product{% else %}New Product{% endif %}{% endblock %}
+{% block page_title %}{% if product %}Edit Product{% else %}New Product{% endif %}{% endblock %}
+
+{% block header_actions %}
+<a href="{% url 'gym_owner:shop_products' %}" class="px-4 py-2 rounded-lg text-sm font-semibold bg-gray-700 text-gray-300 hover:bg-gray-600 transition-colors">← Back to Products</a>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+
+  {% if messages %}
+  <div class="space-y-2">
+    {% for message in messages %}
+    <div class="bg-red-900/20 border border-red-700/30 rounded-xl px-4 py-3">
+      <p class="text-sm text-red-400">{{ message }}</p>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <div class="bg-gray-800 rounded-xl p-6 space-y-5">
+
+      <!-- Name -->
+      <div>
+        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Name *</label>
+        <input type="text" name="name" required value="{{ product.name|default:'' }}"
+               class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-accent text-sm"
+               placeholder="Product name">
+      </div>
+
+      <!-- Description -->
+      <div>
+        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Description</label>
+        <textarea name="description" rows="3"
+                  class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-accent text-sm resize-none"
+                  placeholder="Optional product description">{{ product.description|default:'' }}</textarea>
+      </div>
+
+      <!-- Category -->
+      <div>
+        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Category</label>
+        <select name="category"
+                class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent text-sm">
+          {% for value, label in categories %}
+          <option value="{{ value }}" {% if product and product.category == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Price and Stock (side by side) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Price *</label>
+          <input type="number" name="price" required step="0.01" min="0" value="{{ product.price|default:'' }}"
+                 class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-accent text-sm"
+                 placeholder="0.00">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Stock *</label>
+          <input type="number" name="stock" required min="0" value="{{ product.stock|default:'' }}"
+                 class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-accent text-sm"
+                 placeholder="0">
+        </div>
+      </div>
+
+      <!-- SKU and Loyalty Points (side by side) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">SKU</label>
+          <input type="text" name="sku" value="{{ product.sku|default:'' }}"
+                 class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-accent text-sm"
+                 placeholder="Optional SKU code">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Loyalty Points Earned</label>
+          <input type="number" name="loyalty_points_earned" min="0" value="{{ product.loyalty_points_earned|default:'0' }}"
+                 class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-accent text-sm"
+                 placeholder="0">
+        </div>
+      </div>
+
+      <!-- Image Upload -->
+      <div>
+        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Product Image</label>
+        {% if product and product.image %}
+        <div class="mb-3">
+          <img src="{{ product.image.url }}" alt="{{ product.name }}" class="h-24 w-24 object-cover rounded-lg border border-gray-600">
+          <p class="text-xs text-gray-500 mt-1">Current image — upload a new file to replace it</p>
+        </div>
+        {% endif %}
+        <input type="file" name="image" accept="image/*"
+               class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-gray-300 focus:outline-none focus:border-accent text-sm file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-gray-600 file:text-gray-300 hover:file:bg-gray-500">
+      </div>
+
+      <!-- Is Active -->
+      <div class="flex items-center gap-3">
+        <input type="checkbox" name="is_active" id="is_active"
+               class="w-4 h-4 rounded accent-border cursor-pointer"
+               {% if product %}{% if product.is_active %}checked{% endif %}{% else %}checked{% endif %}>
+        <label for="is_active" class="text-sm font-medium text-gray-300 cursor-pointer">Active (visible in shop)</label>
+      </div>
+
+      <!-- Submit -->
+      <div class="pt-2">
+        <button type="submit" class="accent-btn px-6 py-3 rounded-xl text-sm font-semibold">
+          Save Product
+        </button>
+      </div>
+
+    </div>
+  </form>
+
+</div>
+{% endblock %}

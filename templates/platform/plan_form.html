@@ -1,0 +1,77 @@
+{% extends "platform/base.html" %}
+{% block title %}{% if plan %}Edit {{ plan.name }}{% else %}New Plan{% endif %}{% endblock %}
+{% block page_title %}{% if plan %}Edit Plan{% else %}New Plan{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-xl">
+  <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+    <form method="post" class="space-y-5">
+      {% csrf_token %}
+
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-1">Plan Name</label>
+        <input type="text" name="name" value="{{ form.name.value|default:'' }}" required
+               class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand"
+               placeholder="e.g. Starter, Pro, Enterprise">
+        {% if form.name.errors %}
+        <p class="mt-1 text-xs text-red-400">{{ form.name.errors.0 }}</p>
+        {% endif %}
+      </div>
+
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-1">Max Members</label>
+          <input type="number" name="max_members" value="{{ form.max_members.value|default:'' }}" required min="1"
+                 class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-300 mb-1">Max Locations</label>
+          <input type="number" name="max_locations" value="{{ form.max_locations.value|default:'' }}" required min="1"
+                 class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand">
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-1">Monthly Price ($)</label>
+        <input type="number" name="price_monthly" value="{{ form.price_monthly.value|default:'' }}" required
+               step="0.01" min="0"
+               class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-1">Stripe Price ID</label>
+        <input type="text" name="stripe_price_id" value="{{ form.stripe_price_id.value|default:'' }}"
+               class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand font-mono"
+               placeholder="price_...">
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-1">
+          Features <span class="text-gray-500 font-normal">(JSON, e.g. {"ai_coach": true})</span>
+        </label>
+        <textarea name="features" rows="3"
+                  class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white font-mono placeholder-gray-500 focus:outline-none focus:border-brand resize-none"
+                  placeholder="{}">{{ form.features.value|default:'{}' }}</textarea>
+        {% if form.features.errors %}
+        <p class="mt-1 text-xs text-red-400">{{ form.features.errors.0 }}</p>
+        {% endif %}
+      </div>
+
+      <div class="flex items-center gap-3">
+        <input type="checkbox" name="is_active" id="is_active"
+               {% if form.is_active.value != False %}checked{% endif %}
+               class="w-4 h-4 rounded border-gray-600 bg-gray-800 text-brand focus:ring-brand focus:ring-offset-gray-900">
+        <label for="is_active" class="text-sm text-gray-300">Active (visible to new signups)</label>
+      </div>
+
+      <div class="flex items-center justify-between pt-2">
+        <a href="{% url 'platform_admin:plan_list' %}" class="text-sm text-gray-400 hover:text-white transition-colors">Cancel</a>
+        <button type="submit"
+                class="px-5 py-2 bg-brand hover:bg-brand-dark text-white text-sm font-medium rounded-lg transition-colors">
+          {% if plan %}Save Changes{% else %}Create Plan{% endif %}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

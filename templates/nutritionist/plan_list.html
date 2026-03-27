@@ -1,0 +1,52 @@
+{% extends "base/nutritionist_base.html" %}
+{% block title %}Nutrition Plans{% endblock %}
+{% block page_title %}Nutrition Plans{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+  <div class="bg-gray-800 rounded-xl overflow-hidden">
+    {% if plans %}
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-gray-700 text-xs text-gray-500 uppercase tracking-wider">
+          <th class="text-left px-5 py-3 font-medium">Client</th>
+          <th class="text-left px-4 py-3 font-medium">Calories</th>
+          <th class="text-left px-4 py-3 font-medium">Macros</th>
+          <th class="text-left px-4 py-3 font-medium">Status</th>
+          <th class="text-left px-4 py-3 font-medium">Created</th>
+          <th class="px-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-700/50">
+        {% for plan in plans %}
+        <tr class="hover:bg-gray-700/20 transition-colors">
+          <td class="px-5 py-3 font-medium text-white">{{ plan.member.full_name }}</td>
+          <td class="px-4 py-3 text-gray-300 text-xs">{{ plan.daily_calories|default:"—" }} kcal</td>
+          <td class="px-4 py-3 text-xs text-gray-400">
+            P{{ plan.protein_g|default:"?" }}g · C{{ plan.carbs_g|default:"?" }}g · F{{ plan.fat_g|default:"?" }}g
+          </td>
+          <td class="px-4 py-3">
+            {% if plan.nutritionist_reviewed %}
+            <span class="text-xs bg-green-900/40 text-green-400 px-2 py-0.5 rounded-full">Reviewed</span>
+            {% else %}
+            <span class="text-xs bg-yellow-900/40 text-yellow-400 px-2 py-0.5 rounded-full">AI Draft</span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-3 text-gray-400 text-xs">{{ plan.generated_at|date:"d M Y" }}</td>
+          <td class="px-4 py-3 text-right">
+            <a href="{% url 'nutritionist:plan_edit' plan.member_id plan.pk %}"
+               class="text-xs text-accent hover:underline">Edit</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="py-14 text-center">
+      <p class="text-gray-500 text-sm">No nutrition plans yet.</p>
+      <p class="text-gray-600 text-xs mt-1">Open a client to create one.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

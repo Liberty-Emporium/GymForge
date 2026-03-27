@@ -1,0 +1,84 @@
+{% extends "base/manager_base.html" %}
+{% block title %}Member Notes{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-xl font-bold text-white">Member Notes</h1>
+      <p class="text-sm text-gray-500">{{ location.name }}</p>
+    </div>
+  </div>
+
+  <!-- Add Note Form -->
+  <div class="bg-gray-800 rounded-xl p-5">
+    <h2 class="font-semibold text-white text-sm mb-4">Add Note</h2>
+    <form method="post" action="{% url 'manager:member_note_add' %}" class="space-y-4">
+      {% csrf_token %}
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-1.5">Member *</label>
+        <input type="text" name="member_search" list="member-list" placeholder="Search by name or email…"
+               class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-accent transition-colors">
+        <input type="hidden" name="member_id" id="member-id-input">
+        <datalist id="member-list">
+          {% for m in members %}
+          <option value="{{ m.full_name }} — {{ m.email }}" data-id="{{ m.id }}">{{ m.full_name }}</option>
+          {% endfor %}
+        </datalist>
+        <!-- Fallback: direct member ID input -->
+        <p class="text-xs text-gray-600 mt-1">Or enter member ID: <input type="number" name="member_id" placeholder="ID"
+          class="bg-gray-700 border border-gray-600 rounded px-2 py-0.5 text-xs text-white w-20 ml-1"></p>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-1.5">Note *</label>
+        <textarea name="note" rows="3" required placeholder="Enter note content…"
+                  class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-accent transition-colors resize-none"></textarea>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-1.5">Visibility</label>
+        <select name="visibility"
+                class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-accent transition-colors">
+          <option value="staff">Staff (all staff can see)</option>
+          <option value="manager" selected>Manager (managers only)</option>
+        </select>
+      </div>
+      <button type="submit" class="w-full accent-btn py-3 rounded-xl font-semibold text-sm">Add Note</button>
+    </form>
+  </div>
+
+  <!-- Notes List -->
+  <div class="bg-gray-800 rounded-xl overflow-hidden">
+    <div class="px-5 py-3 border-b border-gray-700">
+      <p class="font-semibold text-white text-sm">Recent Notes</p>
+    </div>
+    {% if notes %}
+    <div class="divide-y divide-gray-700/50">
+      {% for note in notes %}
+      <div class="px-5 py-4">
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 flex-wrap mb-1">
+              <p class="font-semibold text-white text-sm">{{ note.member.full_name }}</p>
+              <span class="text-xs px-2 py-0.5 rounded-full
+                {% if note.visibility == 'manager' %}bg-blue-900/40 text-blue-400
+                {% elif note.visibility == 'owner' %}bg-purple-900/40 text-purple-400
+                {% else %}bg-gray-700 text-gray-400{% endif %}">
+                {{ note.visibility|capfirst }}
+              </span>
+            </div>
+            <p class="text-sm text-gray-300">{{ note.note }}</p>
+            <p class="text-xs text-gray-600 mt-1.5">
+              {{ note.created_at|date:"d M Y, g:i A" }}
+              {% if note.created_by %}· by {{ note.created_by.get_full_name }}{% endif %}
+            </p>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="px-5 py-10 text-sm text-gray-600 text-center">No notes yet</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

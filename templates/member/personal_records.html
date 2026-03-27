@@ -1,0 +1,96 @@
+{% extends "base/member_base.html" %}
+
+{% block title %}Personal Records{% endblock %}
+{% block header_title %}Personal Records{% endblock %}
+
+{% block header_actions %}
+  <a href="{% url 'members:workout_history' %}"
+     class="p-2 text-white/60 hover:text-white transition">
+    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+    </svg>
+  </a>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+  .pr-card   { background: #111827; border: 1px solid rgba(255,255,255,.07); }
+  .pr-badge  { font-size: .65rem; font-weight: 700; letter-spacing: .04em;
+               text-transform: uppercase; padding: .2rem .5rem; border-radius: 9999px; }
+  .badge-weight { background: color-mix(in srgb, var(--accent) 20%, transparent);
+                  color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent); }
+  .badge-reps   { background: color-mix(in srgb, var(--primary) 30%, transparent);
+                  color: #93c5fd; border: 1px solid rgba(147,197,253,.3); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="px-4 py-4 max-w-lg mx-auto">
+
+  <p class="text-xs text-gray-500 mb-4">
+    Calculated from all logged workouts. Heaviest weight lifted and most reps in a single set per exercise.
+  </p>
+
+  {% if records %}
+    <div class="space-y-2">
+      {% for r in records %}
+        <div class="pr-card rounded-2xl p-4">
+          <h3 class="font-semibold text-white mb-3">{{ r.name }}</h3>
+          <div class="grid grid-cols-2 gap-3">
+
+            <!-- Max weight -->
+            <div class="bg-gray-800/50 rounded-xl p-3">
+              <div class="flex items-center justify-between mb-1">
+                <span class="pr-badge badge-weight">Max Weight</span>
+                <span class="text-xs text-gray-500">{{ r.max_weight_date|date:"d M Y" }}</span>
+              </div>
+              <p class="text-xl font-bold text-white mt-1">
+                {% if r.max_weight_kg %}
+                  {{ r.max_weight_kg|floatformat:"-1" }} <span class="text-sm font-normal text-gray-400">kg</span>
+                {% else %}
+                  —
+                {% endif %}
+              </p>
+              {% if r.max_weight_reps %}
+                <p class="text-xs text-gray-500 mt-0.5">{{ r.max_weight_reps }} reps that set</p>
+              {% endif %}
+            </div>
+
+            <!-- Max reps -->
+            <div class="bg-gray-800/50 rounded-xl p-3">
+              <div class="flex items-center justify-between mb-1">
+                <span class="pr-badge badge-reps">Max Reps</span>
+                <span class="text-xs text-gray-500">{{ r.max_reps_date|date:"d M Y" }}</span>
+              </div>
+              <p class="text-xl font-bold text-white mt-1">
+                {% if r.max_reps %}
+                  {{ r.max_reps }} <span class="text-sm font-normal text-gray-400">reps</span>
+                {% else %}
+                  —
+                {% endif %}
+              </p>
+              {% if r.max_reps_weight %}
+                <p class="text-xs text-gray-500 mt-0.5">{{ r.max_reps_weight|floatformat:"-1" }} kg that set</p>
+              {% endif %}
+            </div>
+
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+
+  {% else %}
+    <div class="text-center py-16">
+      <p class="text-4xl mb-4">🏆</p>
+      <h2 class="text-lg font-semibold text-white mb-2">No records yet</h2>
+      <p class="text-sm text-gray-400 mb-6 max-w-xs mx-auto">
+        Log workouts with exercises, sets, and weights to track your personal bests.
+      </p>
+      <a href="{% url 'members:workout_log' %}" class="btn-accent px-6 py-3 rounded-xl font-semibold text-sm inline-block">
+        Log a Workout
+      </a>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

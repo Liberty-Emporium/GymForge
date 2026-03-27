@@ -1,0 +1,6 @@
+-r base.txt
+
+# Development-only
+ipython
+django-debug-toolbar
+factory-boy

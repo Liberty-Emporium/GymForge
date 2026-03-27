@@ -1,0 +1,193 @@
+{% extends "base/member_base.html" %}
+
+{% block title %}Workouts{% endblock %}
+{% block header_title %}Workouts{% endblock %}
+
+{% block header_actions %}
+  <a href="{% url 'members:workout_log' %}"
+     class="btn-accent flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold">
+    + Log
+  </a>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+  .section-card { background: #111827; border: 1px solid rgba(255,255,255,.07); }
+  .day-workout  { background-color: var(--accent); color: #fff; }
+  .day-today    { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .log-card     { background: #1f2937; border: 1px solid rgba(255,255,255,.06); }
+  .streak-badge { background: linear-gradient(135deg, var(--primary), color-mix(in srgb, var(--primary) 70%, #000)); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="px-4 py-4 space-y-4 max-w-lg mx-auto">
+
+  <!-- ── Streak + PR quick link ──────────────────────────── -->
+  <div class="flex gap-3">
+    <div class="streak-badge flex-1 rounded-2xl p-4 text-white text-center">
+      <p class="text-3xl font-bold">{{ streak_days }}</p>
+      <p class="text-xs text-white/70 mt-0.5">day streak 🔥</p>
+    </div>
+    <a href="{% url 'members:personal_records' %}"
+       class="section-card flex-1 rounded-2xl p-4 text-center flex flex-col items-center justify-center">
+      <p class="text-2xl">🏆</p>
+      <p class="text-xs text-gray-300 mt-1">Personal Records</p>
+    </a>
+    <a href="{% url 'members:workout_log' %}"
+       class="btn-accent flex-1 rounded-2xl p-4 text-center flex flex-col items-center justify-center">
+      <p class="text-2xl">➕</p>
+      <p class="text-xs mt-1">Log Workout</p>
+    </a>
+  </div>
+
+  <!-- ── Today's plan ───────────────────────────────────── -->
+  {% if workout_plan and plan_exercises %}
+    <div class="section-card rounded-2xl p-4">
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <p class="text-xs text-gray-500 uppercase tracking-wide">Today's Plan</p>
+          <h3 class="font-semibold text-white">
+            {% if plan_focus %}{{ plan_focus }}{% else %}{{ today|date:"l" }}{% endif %}
+          </h3>
+        </div>
+        <a href="{% url 'members:workout_log' %}"
+           class="btn-accent text-xs px-3 py-1.5 rounded-xl font-semibold">Log This</a>
+      </div>
+      <div class="space-y-1.5">
+        {% for ex in plan_exercises %}
+          <div class="flex items-center gap-2">
+            <div class="w-1.5 h-1.5 rounded-full flex-shrink-0" style="background:var(--accent)"></div>
+            <span class="text-sm text-gray-200">{{ ex.name }}</span>
+            <span class="text-xs text-gray-500 ml-auto">{{ ex.sets }}×{{ ex.reps }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- ── Calendar ───────────────────────────────────────── -->
+  <div class="section-card rounded-2xl p-4">
+    <!-- Month nav -->
+    <div class="flex items-center justify-between mb-3">
+      <a href="?year={{ prev_year }}&month={{ prev_month }}"
+         class="p-1.5 rounded-lg text-gray-400 hover:text-white transition">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+      </a>
+      <h3 class="text-sm font-semibold text-white">{{ month_name }}</h3>
+      <a href="?year={{ next_year }}&month={{ next_month }}"
+         class="p-1.5 rounded-lg text-gray-400 hover:text-white transition">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+      </a>
+    </div>
+
+    <!-- Day-of-week headers -->
+    <div class="grid grid-cols-7 mb-1">
+      {% for h in "MTWTFSS" %}
+        <div class="text-center text-xs text-gray-500 py-1">{{ h }}</div>
+      {% endfor %}
+    </div>
+
+    <!-- Weeks -->
+    {% for week in cal_weeks %}
+      <div class="grid grid-cols-7 gap-0.5 mb-0.5">
+        {% for item in week %}
+          {% if item.day %}
+            <div class="aspect-square rounded-lg flex items-center justify-center text-xs font-medium
+                        {% if item.has_workout %}day-workout{% elif item.is_today %}text-white border border-accent{% else %}text-gray-500{% endif %}
+                        {% if item.is_today %}day-today{% endif %}">
+              {{ item.day.day }}
+            </div>
+          {% else %}
+            <div class="aspect-square"></div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    {% endfor %}
+
+    <!-- Legend -->
+    <div class="flex items-center gap-3 mt-3 pt-3 border-t border-gray-800">
+      <div class="flex items-center gap-1.5">
+        <div class="w-3 h-3 rounded day-workout"></div>
+        <span class="text-xs text-gray-400">Workout logged</span>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <div class="w-3 h-3 rounded day-today border border-gray-400"></div>
+        <span class="text-xs text-gray-400">Today</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Recent workout logs ────────────────────────────── -->
+  <div>
+    <h2 class="text-sm font-semibold text-white mb-3">Recent Workouts</h2>
+    {% if recent_logs %}
+      <div class="space-y-2">
+        {% for log in recent_logs %}
+          <div class="log-card rounded-2xl p-4">
+            <div class="flex items-start justify-between">
+              <div>
+                <p class="text-sm font-semibold text-white">
+                  {{ log.workout_date|date:"D, d M Y" }}
+                </p>
+                <p class="text-xs text-gray-400 mt-0.5">
+                  {{ log.exercise_count }} exercise{{ log.exercise_count|pluralize }}
+                  {% if log.duration_minutes %} · {{ log.duration_minutes }} min{% endif %}
+                  · {{ log.total_sets }} total sets
+                </p>
+              </div>
+              <div class="flex gap-2 items-center">
+                {% if log.mood_before %}
+                  <span class="text-xs text-gray-500" title="Mood before">
+                    {% if log.mood_before >= 4 %}😄
+                    {% elif log.mood_before == 3 %}😐
+                    {% else %}😔
+                    {% endif %}
+                  </span>
+                {% endif %}
+                {% if log.energy_after %}
+                  <span class="text-xs text-gray-500" title="Energy after">
+                    {% if log.energy_after >= 4 %}⚡
+                    {% elif log.energy_after == 3 %}🔋
+                    {% else %}💤
+                    {% endif %}
+                  </span>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Exercise list -->
+            {% if log.exercises %}
+              <div class="mt-2 flex flex-wrap gap-1">
+                {% for ex in log.exercises %}
+                  <span class="text-xs px-2 py-0.5 rounded-full"
+                        style="background:rgba(255,255,255,.07); color:#d1d5db">
+                    {{ ex.name }}
+                  </span>
+                {% endfor %}
+              </div>
+            {% endif %}
+
+            {% if log.notes %}
+              <p class="text-xs text-gray-500 mt-2 italic truncate">{{ log.notes }}</p>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="section-card rounded-2xl p-8 text-center">
+        <p class="text-3xl mb-2">🏋️</p>
+        <p class="text-sm text-gray-400 mb-4">No workouts logged yet.</p>
+        <a href="{% url 'members:workout_log' %}" class="btn-accent px-5 py-2.5 rounded-xl text-sm font-semibold inline-block">
+          Log Your First Workout
+        </a>
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

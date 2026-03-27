@@ -1,0 +1,16 @@
+<div id="react-btn-{{ post.pk }}">
+  <form hx-post="{% url 'community:react' post.pk %}"
+        hx-target="#react-btn-{{ post.pk }}"
+        hx-swap="outerHTML"
+        hx-include="[name='csrfmiddlewaretoken']"
+        method="post">
+    {% csrf_token %}
+    <input type="hidden" name="reaction_type" value="like">
+    <button type="submit"
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm transition-all
+              {% if reacted %}accent-btn font-semibold{% else %}border border-gray-600 text-gray-400 hover:border-gray-400 hover:text-white{% endif %}">
+      <span>👊</span>
+      <span>High Five{% if count %} · {{ count }}{% endif %}</span>
+    </button>
+  </form>
+</div>

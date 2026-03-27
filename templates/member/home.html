@@ -1,0 +1,222 @@
+{% extends "base/member_base.html" %}
+
+{% block title %}Home{% endblock %}
+{% block header_title %}{{ gym_name|default:"My Gym" }}{% endblock %}
+
+{% block extra_head %}
+<style>
+  .greeting-card { background: linear-gradient(135deg, var(--primary) 0%, color-mix(in srgb, var(--primary) 70%, #000) 100%); }
+  .stat-pill     { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08); }
+  .section-card  { background: #111827; border: 1px solid rgba(255,255,255,.06); }
+  .class-card    { background: #1f2937; border: 1px solid rgba(255,255,255,.06); }
+  .action-btn    { background: #1f2937; border: 1px solid rgba(255,255,255,.06); transition: background .15s; }
+  .action-btn:hover { background: #374151; }
+  .feed-dot-checkin { background-color: var(--accent); }
+  .feed-dot-workout { background: var(--primary); border: 2px solid var(--accent); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="px-4 py-4 space-y-4 max-w-lg mx-auto">
+
+  <!-- ─── 1. AI Greeting ─────────────────────────────────── -->
+  <div class="greeting-card rounded-2xl p-5 text-white">
+    <div class="flex items-start gap-3">
+      <div class="w-9 h-9 rounded-xl btn-accent flex items-center justify-center flex-shrink-0 mt-0.5 text-sm font-bold">
+        {{ request.user.first_name|first|upper|default:"M" }}
+      </div>
+      <div>
+        <p class="text-sm text-white/60 mb-1">Good {% now "A" %} greeting</p>
+        <p class="text-sm leading-relaxed text-white/90">{{ greeting }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── 2. Stats strip ────────────────────────────────── -->
+  <div class="grid grid-cols-4 gap-2">
+    <div class="stat-pill rounded-xl p-3 text-center">
+      <p class="text-lg font-bold text-white">{{ streak_days }}</p>
+      <p class="text-xs text-gray-400 leading-tight">day<br>streak</p>
+    </div>
+    <div class="stat-pill rounded-xl p-3 text-center">
+      <p class="text-lg font-bold text-white">{{ loyalty_points }}</p>
+      <p class="text-xs text-gray-400 leading-tight">loyalty<br>pts</p>
+    </div>
+    <div class="stat-pill rounded-xl p-3 text-center">
+      <p class="text-lg font-bold text-white">{{ checkins_this_month }}</p>
+      <p class="text-xs text-gray-400 leading-tight">visits<br>this mo.</p>
+    </div>
+    <div class="stat-pill rounded-xl p-3 text-center overflow-hidden">
+      {% if membership %}
+        <p class="text-xs font-bold text-white truncate">{{ membership.tier.name }}</p>
+        <p class="text-xs text-gray-400 leading-tight mt-0.5">{{ membership.get_status_display }}</p>
+      {% else %}
+        <p class="text-xs font-bold text-gray-400">No plan</p>
+        <p class="text-xs text-gray-500">—</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ─── 3. Today's classes ───────────────────────────── -->
+  <div class="section-card rounded-2xl p-4">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-sm font-semibold text-white">Today's Classes</h2>
+      <a href="/app/classes/" class="text-xs font-medium" style="color:var(--accent)">See all →</a>
+    </div>
+
+    {% if today_sessions %}
+      <div class="space-y-2">
+        {% for item in today_sessions %}
+          <div class="class-card rounded-xl p-3 flex items-center gap-3">
+            <!-- Time -->
+            <div class="text-center flex-shrink-0 w-10">
+              <p class="text-xs font-bold text-white">{{ item.session.start_datetime|date:"g:i" }}</p>
+              <p class="text-xs text-gray-400">{{ item.session.start_datetime|date:"A" }}</p>
+            </div>
+            <!-- Info -->
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-semibold text-white truncate">{{ item.session.class_type.name }}</p>
+              <p class="text-xs text-gray-400">
+                {{ item.session.class_type.duration_minutes }} min
+                {% if item.session.trainer %} · {{ item.session.trainer.get_full_name }}{% endif %}
+              </p>
+            </div>
+            <!-- Action -->
+            {% if item.is_booked %}
+              <span class="flex-shrink-0 text-xs px-2 py-1 rounded-full font-medium text-white" style="background:var(--primary)">Booked</span>
+            {% elif item.spots == 0 %}
+              <span class="flex-shrink-0 text-xs px-2 py-1 rounded-full font-medium text-gray-400 bg-gray-700">Full</span>
+            {% else %}
+              <a href="/app/classes/{{ item.session.pk }}/book/"
+                 class="flex-shrink-0 btn-accent text-xs px-3 py-1.5 rounded-xl font-semibold">
+                Book
+              </a>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    {% elif not member_profile.primary_location %}
+      <p class="text-sm text-gray-500 text-center py-4">
+        Set your home location in your profile to see today's classes.
+      </p>
+    {% else %}
+      <p class="text-sm text-gray-500 text-center py-4">No classes scheduled today.</p>
+    {% endif %}
+  </div>
+
+  <!-- ─── 4. Workout plan / suggestion ────────────────── -->
+  {% if workout_plan %}
+    <div class="section-card rounded-2xl p-4">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-sm font-semibold text-white">Your Active Plan</h2>
+        <a href="/app/plans/{{ workout_plan.pk }}/" class="text-xs font-medium" style="color:var(--accent)">View →</a>
+      </div>
+      <p class="text-xs text-gray-400 mb-2">
+        {{ workout_plan.get_source_display }} · Created {{ workout_plan.created_at|date:"d M Y" }}
+      </p>
+      {% with week=workout_plan.plan_data.weeks.0 %}
+        {% if week %}
+          <div class="space-y-1">
+            {% for day in week.days %}
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-mono text-gray-500 w-10 flex-shrink-0">{{ day.day|slice:":3"|upper }}</span>
+                <span class="text-sm text-gray-200">{{ day.focus }}</span>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-sm text-gray-400">Workout plan ready — tap to view details.</p>
+        {% endif %}
+      {% endwith %}
+    </div>
+  {% elif workout_suggestion %}
+    <div class="section-card rounded-2xl p-4">
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <h2 class="text-sm font-semibold text-white">Today's Suggested Workout</h2>
+          <p class="text-xs text-gray-400 mt-0.5">Based on your goal · {{ workout_suggestion.title }}</p>
+        </div>
+        <a href="/app/ai/" class="text-xs font-medium" style="color:var(--accent)">Get plan →</a>
+      </div>
+      <div class="space-y-1.5">
+        {% for ex in workout_suggestion.exercises %}
+          <div class="flex items-center gap-3">
+            <div class="w-1.5 h-1.5 rounded-full flex-shrink-0" style="background:var(--accent)"></div>
+            <span class="text-sm text-gray-200 flex-1">{{ ex.name }}</span>
+            <span class="text-xs text-gray-500">{{ ex.sets }}×{{ ex.reps }}</span>
+          </div>
+        {% endfor %}
+      </div>
+      <a href="/app/ai/" class="block mt-3 text-center text-xs font-medium py-2 rounded-xl"
+         style="border: 1px solid var(--accent); color: var(--accent)">
+        Ask AI coach to build your personalised plan →
+      </a>
+    </div>
+  {% else %}
+    <div class="section-card rounded-2xl p-4 text-center">
+      <p class="text-sm text-gray-400 mb-2">No workout plan yet.</p>
+      <a href="/app/ai/" class="btn-accent text-xs px-4 py-2 rounded-xl font-semibold inline-block">
+        Create plan with AI coach
+      </a>
+    </div>
+  {% endif %}
+
+  <!-- ─── 5. Quick actions ─────────────────────────────── -->
+  <div>
+    <h2 class="text-sm font-semibold text-white mb-3">Quick Actions</h2>
+    <div class="grid grid-cols-3 gap-2">
+
+      <a href="/app/classes/" class="action-btn rounded-xl p-4 text-center">
+        <div class="text-xl mb-1">📅</div>
+        <p class="text-xs font-medium text-gray-300">Book Class</p>
+      </a>
+
+      <a href="/app/log-workout/" class="action-btn rounded-xl p-4 text-center">
+        <div class="text-xl mb-1">💪</div>
+        <p class="text-xs font-medium text-gray-300">Log Workout</p>
+      </a>
+
+      <a href="/app/ai/" class="action-btn rounded-xl p-4 text-center">
+        <div class="text-xl mb-1">🤖</div>
+        <p class="text-xs font-medium text-gray-300">AI Coach</p>
+      </a>
+
+      <a href="/app/progress/" class="action-btn rounded-xl p-4 text-center">
+        <div class="text-xl mb-1">📈</div>
+        <p class="text-xs font-medium text-gray-300">Progress</p>
+      </a>
+
+      <a href="/app/shop/" class="action-btn rounded-xl p-4 text-center">
+        <div class="text-xl mb-1">🛍️</div>
+        <p class="text-xs font-medium text-gray-300">Shop</p>
+      </a>
+
+      <a href="/app/loyalty/" class="action-btn rounded-xl p-4 text-center">
+        <div class="text-xl mb-1">⭐</div>
+        <p class="text-xs font-medium text-gray-300">Rewards</p>
+      </a>
+
+    </div>
+  </div>
+
+  <!-- ─── 6. Recent activity ───────────────────────────── -->
+  {% if activity_feed %}
+    <div class="section-card rounded-2xl p-4">
+      <h2 class="text-sm font-semibold text-white mb-3">Recent Activity</h2>
+      <div class="space-y-3">
+        {% for item in activity_feed %}
+          <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm flex-shrink-0"
+                 style="background:rgba(255,255,255,.06)">{{ item.icon }}</div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm text-gray-200 truncate">{{ item.label }}</p>
+              <p class="text-xs text-gray-500">{{ item.sort_dt|date:"D, d M" }} · {{ item.detail }}</p>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

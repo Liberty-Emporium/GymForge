@@ -1,0 +1,372 @@
+{% extends "base/member_base.html" %}
+
+{% block title %}Progress{% endblock %}
+{% block header_title %}My Progress{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="px-4 pt-4 space-y-6 pb-6">
+
+  <!-- ── Goal card ─────────────────────────────────────────────────────── -->
+  {% if health and health.fitness_goal %}
+  <div class="bg-gray-800 rounded-2xl p-4">
+    <div class="flex items-start justify-between gap-3">
+      <div class="flex-1">
+        <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Your Goal</p>
+        <p class="font-bold text-white text-base">{{ health.fitness_goal }}</p>
+        {% if health.goal_detail %}
+        <p class="text-sm text-gray-300 mt-1 leading-relaxed">{{ health.goal_detail }}</p>
+        {% endif %}
+      </div>
+      {% if health.goal_timeline_weeks %}
+      <div class="flex-shrink-0 text-center bg-accent/20 rounded-xl px-3 py-2">
+        <p class="text-xl font-bold text-accent">{{ health.goal_timeline_weeks }}</p>
+        <p class="text-xs text-gray-400">weeks</p>
+      </div>
+      {% endif %}
+    </div>
+    {% if health.activity_level %}
+    <div class="mt-3 pt-3 border-t border-gray-700 flex items-center gap-2">
+      <span class="text-xs text-gray-500">Activity level:</span>
+      <span class="text-xs font-medium text-gray-300">{{ health.activity_level }}</span>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- ── Streak & loyalty stats ────────────────────────────────────────── -->
+  <div class="grid grid-cols-2 gap-3">
+    <div class="bg-gray-800 rounded-2xl p-4 text-center">
+      <p class="text-3xl font-black text-accent">{{ current_streak }}</p>
+      <p class="text-xs text-gray-400 mt-1">Day Streak 🔥</p>
+      <p class="text-xs text-gray-600 mt-0.5">Best: {{ longest_streak }}</p>
+    </div>
+    <div class="bg-gray-800 rounded-2xl p-4 text-center">
+      <p class="text-3xl font-black" style="color: var(--primary)">{{ total_points }}</p>
+      <p class="text-xs text-gray-400 mt-1">Loyalty Points ⭐</p>
+      <p class="text-xs text-gray-600 mt-0.5">{{ badge_count }} badge{{ badge_count|pluralize }} earned</p>
+    </div>
+  </div>
+
+  <!-- ── Latest body stats ─────────────────────────────────────────────── -->
+  {% if latest_metric %}
+  <div class="bg-gray-800 rounded-2xl p-4">
+    <div class="flex items-center justify-between mb-3">
+      <p class="text-sm font-semibold text-white">Latest Body Stats</p>
+      <span class="text-xs text-gray-500">{{ latest_metric.recorded_at|date:"d M Y" }}</span>
+    </div>
+    <div class="grid grid-cols-2 gap-3">
+      {% if latest_metric.weight_kg %}
+      <div class="bg-gray-700/50 rounded-xl p-3 text-center">
+        <p class="text-xl font-bold text-white">{{ latest_metric.weight_kg }}</p>
+        <p class="text-xs text-gray-400">kg</p>
+      </div>
+      {% endif %}
+      {% if latest_metric.body_fat_percent %}
+      <div class="bg-gray-700/50 rounded-xl p-3 text-center">
+        <p class="text-xl font-bold text-white">{{ latest_metric.body_fat_percent }}%</p>
+        <p class="text-xs text-gray-400">Body Fat</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ── Log body metric form ───────────────────────────────────────────── -->
+  <details class="bg-gray-800 rounded-2xl overflow-hidden group">
+    <summary class="flex items-center justify-between px-4 py-4 cursor-pointer list-none">
+      <p class="text-sm font-semibold text-white">Log Body Metrics</p>
+      <svg class="w-4 h-4 text-gray-400 group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+      </svg>
+    </summary>
+    <form method="post" action="{% url 'members:log_body_metric' %}" class="px-4 pb-4 space-y-3">
+      {% csrf_token %}
+      <div>
+        <label class="text-xs text-gray-400 block mb-1">Date</label>
+        <input type="date" name="recorded_at"
+               value="{% now 'Y-m-d' %}"
+               class="w-full bg-gray-700 border border-gray-600 rounded-xl px-3 py-2.5 text-sm text-white focus:border-accent focus:outline-none">
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs text-gray-400 block mb-1">Weight (kg)</label>
+          <input type="number" name="weight_kg" step="0.1" min="20" max="300" placeholder="e.g. 75.5"
+                 class="w-full bg-gray-700 border border-gray-600 rounded-xl px-3 py-2.5 text-sm text-white focus:border-accent focus:outline-none">
+        </div>
+        <div>
+          <label class="text-xs text-gray-400 block mb-1">Body Fat %</label>
+          <input type="number" name="body_fat_percent" step="0.1" min="3" max="60" placeholder="e.g. 18.5"
+                 class="w-full bg-gray-700 border border-gray-600 rounded-xl px-3 py-2.5 text-sm text-white focus:border-accent focus:outline-none">
+        </div>
+      </div>
+      <p class="text-xs text-gray-500 font-medium pt-1">Measurements (cm) — optional</p>
+      <div class="grid grid-cols-3 gap-2">
+        {% for key, label in measurement_cols %}
+        <div>
+          <label class="text-xs text-gray-500 block mb-1">{{ label }}</label>
+          <input type="number" name="{{ key }}" step="0.5" min="20" max="250" placeholder="—"
+                 class="w-full bg-gray-700 border border-gray-600 rounded-xl px-3 py-2 text-sm text-white focus:border-accent focus:outline-none">
+        </div>
+        {% endfor %}
+      </div>
+      <button type="submit"
+              class="w-full py-3 rounded-xl btn-accent font-semibold text-sm mt-1">
+        Save Metrics
+      </button>
+    </form>
+  </details>
+
+  <!-- ── Body metrics chart ────────────────────────────────────────────── -->
+  {% if latest_metric %}
+  <div class="bg-gray-800 rounded-2xl p-4">
+    <p class="text-sm font-semibold text-white mb-3">Weight & Body Fat Trend</p>
+    <div class="relative h-48">
+      <canvas id="bodyChart"></canvas>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ── Workout volume chart ──────────────────────────────────────────── -->
+  <div class="bg-gray-800 rounded-2xl p-4">
+    <p class="text-sm font-semibold text-white mb-1">Workouts per Week</p>
+    <p class="text-xs text-gray-500 mb-3">Last 12 weeks</p>
+    <div class="relative h-36">
+      <canvas id="workoutChart"></canvas>
+    </div>
+  </div>
+
+  <!-- ── Check-in frequency chart ─────────────────────────────────────── -->
+  <div class="bg-gray-800 rounded-2xl p-4">
+    <p class="text-sm font-semibold text-white mb-1">Gym Visits per Week</p>
+    <p class="text-xs text-gray-500 mb-3">Last 12 weeks</p>
+    <div class="relative h-36">
+      <canvas id="checkinChart"></canvas>
+    </div>
+  </div>
+
+  <!-- ── Personal records ──────────────────────────────────────────────── -->
+  {% if top_prs %}
+  <div>
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider">Top Personal Records</h2>
+      <a href="{% url 'members:personal_records' %}" class="text-xs text-accent font-medium">View all</a>
+    </div>
+    <div class="space-y-2">
+      {% for pr in top_prs %}
+      <div class="bg-gray-800 rounded-xl px-4 py-3 flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-accent/20 flex items-center justify-center flex-shrink-0">
+          <span class="text-accent font-bold text-xs">🏆</span>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-semibold text-white truncate">{{ pr.name }}</p>
+          <p class="text-xs text-gray-500 mt-0.5">
+            {{ pr.max_weight_kg }}kg × {{ pr.max_weight_reps }} reps
+            · {{ pr.max_weight_date|date:"d M Y" }}
+          </p>
+        </div>
+        <div class="text-right flex-shrink-0">
+          <p class="text-sm font-bold text-accent">{{ pr.max_weight_kg }}<span class="text-xs font-normal text-gray-500">kg</span></p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ── Badges ────────────────────────────────────────────────────────── -->
+  {% if badges %}
+  <div>
+    <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Badges Earned</h2>
+    <div class="grid grid-cols-3 gap-2">
+      {% for mb in badges %}
+      <div class="bg-gray-800 rounded-2xl p-3 text-center">
+        {% if mb.milestone.icon %}
+        <img src="{{ mb.milestone.icon.url }}" alt="{{ mb.milestone.name }}"
+             class="w-10 h-10 mx-auto rounded-full object-cover mb-2">
+        {% else %}
+        <div class="w-10 h-10 mx-auto rounded-full bg-accent/20 flex items-center justify-center mb-2">
+          <span class="text-accent text-lg">⭐</span>
+        </div>
+        {% endif %}
+        <p class="text-xs font-semibold text-white leading-tight">{{ mb.milestone.name }}</p>
+        <p class="text-xs text-gray-600 mt-0.5">{{ mb.earned_at|date:"d M" }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ── Measurements table ────────────────────────────────────────────── -->
+  {% if metrics_table_rows %}
+  <div>
+    <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Measurements History</h2>
+    <div class="bg-gray-800 rounded-2xl overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-xs">
+          <thead>
+            <tr class="border-b border-gray-700">
+              <th class="text-left px-4 py-2.5 text-gray-500 font-medium whitespace-nowrap">Date</th>
+              <th class="text-right px-3 py-2.5 text-gray-500 font-medium">Weight</th>
+              <th class="text-right px-3 py-2.5 text-gray-500 font-medium">BF%</th>
+              {% for key, label in measurement_cols %}
+              <th class="text-right px-3 py-2.5 text-gray-500 font-medium">{{ label }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-700/50">
+            {% for m, meas_values in metrics_table_rows %}
+            <tr class="hover:bg-gray-700/30 transition-colors">
+              <td class="px-4 py-2.5 text-gray-300 whitespace-nowrap">{{ m.recorded_at|date:"d M Y" }}</td>
+              <td class="px-3 py-2.5 text-right text-gray-200">
+                {% if m.weight_kg %}{{ m.weight_kg }}{% else %}—{% endif %}
+              </td>
+              <td class="px-3 py-2.5 text-right text-gray-200">
+                {% if m.body_fat_percent %}{{ m.body_fat_percent }}%{% else %}—{% endif %}
+              </td>
+              {% for val in meas_values %}
+              <td class="px-3 py-2.5 text-right text-gray-200">
+                {% if val %}{{ val }}{% else %}—{% endif %}
+              </td>
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+<!-- Chart.js initialisation -->
+<script>
+  // Inject branding colors from Django context into JS scope
+  const PRIMARY_COLOR = "{{ primary_color|default:'#1a1a2e' }}";
+  const ACCENT_COLOR  = "{{ accent_color|default:'#e94560' }}";
+
+  // Chart data from view
+  const bodyData    = {{ body_chart_json|safe }};
+  const workoutData = {{ workout_chart_json|safe }};
+  const checkinData = {{ checkin_chart_json|safe }};
+
+  // Shared chart defaults
+  Chart.defaults.color = '#9ca3af';
+  Chart.defaults.font.family = 'ui-sans-serif, system-ui, sans-serif';
+  Chart.defaults.font.size = 11;
+
+  const gridColor = 'rgba(255,255,255,0.06)';
+
+  // ── Body metrics (line chart) ──────────────────────────────────────────
+  const bodyCtx = document.getElementById('bodyChart');
+  if (bodyCtx && bodyData.labels.length > 0) {
+    new Chart(bodyCtx, {
+      type: 'line',
+      data: {
+        labels: bodyData.labels,
+        datasets: [
+          {
+            label: 'Weight (kg)',
+            data: bodyData.weight,
+            borderColor: ACCENT_COLOR,
+            backgroundColor: ACCENT_COLOR + '22',
+            tension: 0.4,
+            pointRadius: 4,
+            pointBackgroundColor: ACCENT_COLOR,
+            fill: true,
+            yAxisID: 'y',
+          },
+          {
+            label: 'Body Fat (%)',
+            data: bodyData.body_fat,
+            borderColor: PRIMARY_COLOR,
+            backgroundColor: PRIMARY_COLOR + '22',
+            tension: 0.4,
+            pointRadius: 4,
+            pointBackgroundColor: PRIMARY_COLOR,
+            fill: true,
+            yAxisID: 'y1',
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { position: 'bottom', labels: { boxWidth: 10, padding: 12 } },
+        },
+        scales: {
+          x: { grid: { color: gridColor }, ticks: { maxTicksLimit: 6 } },
+          y: {
+            position: 'left',
+            grid: { color: gridColor },
+            title: { display: true, text: 'kg', color: '#6b7280' },
+          },
+          y1: {
+            position: 'right',
+            grid: { drawOnChartArea: false },
+            title: { display: true, text: '%', color: '#6b7280' },
+          },
+        },
+      },
+    });
+  }
+
+  // ── Workout volume (bar chart) ─────────────────────────────────────────
+  const workoutCtx = document.getElementById('workoutChart');
+  if (workoutCtx) {
+    new Chart(workoutCtx, {
+      type: 'bar',
+      data: {
+        labels: workoutData.labels,
+        datasets: [{
+          label: 'Workouts',
+          data: workoutData.counts,
+          backgroundColor: ACCENT_COLOR + 'cc',
+          borderRadius: 6,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { color: gridColor }, ticks: { maxTicksLimit: 6 } },
+          y: { grid: { color: gridColor }, ticks: { stepSize: 1 }, beginAtZero: true },
+        },
+      },
+    });
+  }
+
+  // ── Check-in frequency (bar chart) ────────────────────────────────────
+  const checkinCtx = document.getElementById('checkinChart');
+  if (checkinCtx) {
+    new Chart(checkinCtx, {
+      type: 'bar',
+      data: {
+        labels: checkinData.labels,
+        datasets: [{
+          label: 'Check-ins',
+          data: checkinData.counts,
+          backgroundColor: PRIMARY_COLOR + 'cc',
+          borderRadius: 6,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { color: gridColor }, ticks: { maxTicksLimit: 6 } },
+          y: { grid: { color: gridColor }, ticks: { stepSize: 1 }, beginAtZero: true },
+        },
+      },
+    });
+  }
+</script>
+{% endblock %}

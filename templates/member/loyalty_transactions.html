@@ -1,0 +1,72 @@
+{% extends "base/member_base.html" %}
+{% block title %}Points History{% endblock %}
+
+{% block content %}
+<div class="space-y-4 pb-24">
+
+  <div class="flex items-center gap-3">
+    <a href="{% url 'loyalty:dashboard' %}" class="text-gray-400 hover:text-white transition-colors">
+      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+    </a>
+    <h1 class="text-xl font-bold text-white">Points History</h1>
+  </div>
+
+  <!-- Balance summary -->
+  <div class="bg-gray-800 rounded-2xl px-5 py-4 flex items-center justify-between">
+    <p class="text-sm text-gray-400">Current Balance</p>
+    <p class="text-2xl font-black text-white">{{ member.loyalty_points }} pts</p>
+  </div>
+
+  <!-- Transactions list -->
+  <div class="bg-gray-800 rounded-2xl overflow-hidden">
+    {% if page_obj %}
+    <div class="divide-y divide-gray-700/50">
+      {% for tx in page_obj %}
+      <div class="px-5 py-4 flex items-start justify-between gap-3">
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-medium text-white">
+            {{ tx.description|default:tx.get_transaction_type_display }}
+          </p>
+          <div class="flex items-center gap-2 mt-0.5">
+            <span class="text-xs capitalize px-2 py-0.5 rounded-full
+              {% if tx.transaction_type == 'earn' %}bg-green-900/40 text-green-400
+              {% elif tx.transaction_type == 'redeem' %}bg-red-900/40 text-red-400
+              {% elif tx.transaction_type == 'expire' %}bg-gray-700 text-gray-500
+              {% else %}bg-blue-900/40 text-blue-400{% endif %}">
+              {{ tx.get_transaction_type_display }}
+            </span>
+            <span class="text-xs text-gray-600">{{ tx.created_at|date:"d M Y, g:i A" }}</span>
+          </div>
+        </div>
+        <p class="font-black text-lg flex-shrink-0
+          {% if tx.points > 0 %}text-green-400{% else %}text-red-400{% endif %}">
+          {% if tx.points > 0 %}+{% endif %}{{ tx.points }}
+        </p>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="py-12 text-center">
+      <p class="text-gray-500 text-sm">No transactions yet.</p>
+      <p class="text-gray-600 text-xs mt-1">Start earning by checking in and logging workouts!</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Pagination -->
+  {% if page_obj.has_other_pages %}
+  <div class="flex justify-center gap-3">
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}"
+       class="px-4 py-2 rounded-xl border border-gray-600 text-sm text-gray-300 hover:border-gray-400 transition-colors">← Prev</a>
+    {% endif %}
+    <span class="px-4 py-2 text-sm text-gray-500">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}"
+       class="px-4 py-2 rounded-xl border border-gray-600 text-sm text-gray-300 hover:border-gray-400 transition-colors">Next →</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

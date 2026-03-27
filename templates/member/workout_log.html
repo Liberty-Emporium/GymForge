@@ -1,0 +1,271 @@
+{% extends "base/member_base.html" %}
+
+{% block title %}Log Workout{% endblock %}
+{% block header_title %}Log Workout{% endblock %}
+
+{% block extra_head %}
+<style>
+  .section-card  { background: #111827; border: 1px solid rgba(255,255,255,.07); }
+  .field-label   { font-size: .7rem; font-weight: 600; color: #9ca3af; text-transform: uppercase; letter-spacing: .04em; margin-bottom: .3rem; }
+  .field-input   { background: #1f2937; border: 1px solid rgba(255,255,255,.1); color: #f9fafb; border-radius: .75rem; padding: .6rem .9rem; font-size: .875rem; width: 100%; }
+  .field-input:focus { outline: none; border-color: var(--accent); }
+  .mood-btn      { background: #1f2937; border: 1px solid transparent; border-radius: .75rem; padding: .5rem; text-align: center; cursor: pointer; flex: 1; transition: .15s; }
+  .mood-btn.sel  { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 15%, #1f2937); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="px-4 py-4 max-w-lg mx-auto">
+
+  {% if plan_focus %}
+    <div class="rounded-xl px-4 py-2.5 mb-4 text-sm font-medium text-white"
+         style="background: color-mix(in srgb, var(--primary) 40%, #1f2937)">
+      📋 Pre-filled from today's plan: <strong>{{ plan_focus }}</strong>
+    </div>
+  {% endif %}
+
+  {% if errors %}
+    <div class="bg-red-900/40 border border-red-700 rounded-xl px-4 py-3 mb-4 text-sm text-red-300 space-y-1">
+      {% for key, msg in errors.items %}
+        <p>{{ msg }}</p>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <form method="post" action="{% url 'members:workout_log' %}" id="workout-form">
+    {% csrf_token %}
+
+    <!-- Date + Duration row -->
+    <div class="grid grid-cols-2 gap-3 mb-4">
+      <div>
+        <p class="field-label">Date *</p>
+        <input type="date" name="workout_date" id="workout_date"
+               value="{{ post.workout_date|default:today }}"
+               required class="field-input">
+      </div>
+      <div>
+        <p class="field-label">Duration (min)</p>
+        <input type="number" name="duration_minutes" min="1" max="600"
+               value="{{ post.duration_minutes|default:'' }}"
+               placeholder="e.g. 45" class="field-input">
+      </div>
+    </div>
+
+    <!-- Exercises section -->
+    <div class="mb-4">
+      <div class="flex items-center justify-between mb-2">
+        <p class="field-label mb-0">Exercises *</p>
+        <button type="button" id="add-exercise-btn"
+                class="text-xs font-semibold" style="color:var(--accent)"
+                onclick="addExercise()">+ Add exercise</button>
+      </div>
+
+      <div id="exercises-container">
+        {% if prefill_exercises %}
+          {% for ex in prefill_exercises %}
+            {# Render prefill exercise rows directly #}
+            <div class="exercise-block bg-gray-800/60 rounded-xl p-3 mb-2" data-exercise-idx="{{ forloop.counter0 }}">
+              <div class="flex items-center gap-2 mb-2">
+                <input type="text"
+                       name="exercise_{{ forloop.counter0 }}_name"
+                       value="{{ ex.name }}"
+                       placeholder="Exercise name"
+                       required
+                       class="flex-1 bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white
+                              placeholder-gray-500 focus:outline-none">
+                <button type="button" onclick="removeExercise(this)"
+                        class="p-1.5 text-gray-500 hover:text-red-400 transition">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="set-rows space-y-1.5 mb-2">
+                {% for si in ex.set_range %}
+                <div class="set-row flex items-center gap-2">
+                  <span class="text-xs text-gray-500 w-9 flex-shrink-0">Set {{ forloop.counter }}</span>
+                  <input type="number"
+                         name="exercise_{{ forloop.parentloop.counter0 }}_set_{{ si }}_reps"
+                         min="1" max="999" placeholder="Reps"
+                         class="w-16 bg-gray-900 border border-gray-700 rounded-lg px-2 py-1.5 text-sm text-white
+                                placeholder-gray-500 focus:outline-none text-center">
+                  <input type="number"
+                         name="exercise_{{ forloop.parentloop.counter0 }}_set_{{ si }}_weight_kg"
+                         min="0" max="9999" step="0.5" placeholder="kg"
+                         class="w-16 bg-gray-900 border border-gray-700 rounded-lg px-2 py-1.5 text-sm text-white
+                                placeholder-gray-500 focus:outline-none text-center">
+                  <span class="text-xs text-gray-600">kg</span>
+                </div>
+                {% endfor %}
+              </div>
+              <button type="button" onclick="addSet(this, {{ forloop.counter0 }})"
+                      class="text-xs font-medium" style="color:var(--accent)">+ Add set</button>
+            </div>
+          {% endfor %}
+        {% else %}
+          {# One blank exercise row by default #}
+          <div class="exercise-block bg-gray-800/60 rounded-xl p-3 mb-2" data-exercise-idx="0">
+            <div class="flex items-center gap-2 mb-2">
+              <input type="text" name="exercise_0_name" placeholder="Exercise name (e.g. Bench Press)"
+                     required
+                     class="flex-1 bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white
+                            placeholder-gray-500 focus:outline-none">
+              <button type="button" onclick="removeExercise(this)"
+                      class="p-1.5 text-gray-500 hover:text-red-400 transition">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+            <div class="set-rows space-y-1.5 mb-2">
+              {% for si in "012" %}
+              <div class="set-row flex items-center gap-2">
+                <span class="text-xs text-gray-500 w-9 flex-shrink-0">Set {{ forloop.counter }}</span>
+                <input type="number" name="exercise_0_set_{{ si }}_reps"
+                       min="1" max="999" placeholder="Reps"
+                       class="w-16 bg-gray-900 border border-gray-700 rounded-lg px-2 py-1.5 text-sm text-white
+                              placeholder-gray-500 focus:outline-none text-center">
+                <input type="number" name="exercise_0_set_{{ si }}_weight_kg"
+                       min="0" max="9999" step="0.5" placeholder="kg"
+                       class="w-16 bg-gray-900 border border-gray-700 rounded-lg px-2 py-1.5 text-sm text-white
+                              placeholder-gray-500 focus:outline-none text-center">
+                <span class="text-xs text-gray-600">kg</span>
+              </div>
+              {% endfor %}
+            </div>
+            <button type="button" onclick="addSet(this, 0)"
+                    class="text-xs font-medium" style="color:var(--accent)">+ Add set</button>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Mood + Energy -->
+    <div class="grid grid-cols-2 gap-3 mb-4">
+      <div>
+        <p class="field-label">Mood before</p>
+        <div class="flex gap-1" id="mood-group">
+          {% for v in "12345" %}
+            <button type="button" class="mood-btn {% if post.mood_before == v %}sel{% endif %}"
+                    data-val="{{ v }}" onclick="pickMood('mood', {{ v }})">
+              {% if v == "1" %}😔
+              {% elif v == "2" %}😕
+              {% elif v == "3" %}😐
+              {% elif v == "4" %}🙂
+              {% else %}😄
+              {% endif %}
+            </button>
+          {% endfor %}
+          <input type="hidden" name="mood_before" id="mood_input" value="{{ post.mood_before|default:'' }}">
+        </div>
+      </div>
+      <div>
+        <p class="field-label">Energy after</p>
+        <div class="flex gap-1" id="energy-group">
+          {% for v in "12345" %}
+            <button type="button" class="mood-btn {% if post.energy_after == v %}sel{% endif %}"
+                    data-val="{{ v }}" onclick="pickMood('energy', {{ v }})">
+              {% if v == "1" %}💤
+              {% elif v == "2" %}🔋
+              {% elif v == "3" %}⚡
+              {% elif v == "4" %}🔥
+              {% else %}🚀
+              {% endif %}
+            </button>
+          {% endfor %}
+          <input type="hidden" name="energy_after" id="energy_input" value="{{ post.energy_after|default:'' }}">
+        </div>
+      </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="mb-6">
+      <p class="field-label">Notes</p>
+      <textarea name="notes" rows="3" placeholder="How did it feel? Any notes…"
+                class="field-input resize-none">{{ post.notes|default:'' }}</textarea>
+    </div>
+
+    <button type="submit" class="btn-accent w-full py-3.5 rounded-2xl font-bold text-sm">
+      Save Workout ✓
+    </button>
+  </form>
+
+  <p class="text-center mt-4">
+    <a href="{% url 'members:workout_history' %}" class="text-xs text-gray-500 underline">Cancel</a>
+  </p>
+
+</div>
+
+<script>
+  // Track total exercise count for naming new inputs
+  let exerciseCount = {{ prefill_exercises|length|default:1 }};
+
+  function addExercise() {
+    const container = document.getElementById('exercises-container');
+    const idx = exerciseCount;
+
+    // Build a blank exercise block inline (no HTMX round-trip for simplicity)
+    const block = document.createElement('div');
+    block.className = 'exercise-block bg-gray-800/60 rounded-xl p-3 mb-2';
+    block.setAttribute('data-exercise-idx', idx);
+    block.innerHTML = `
+      <div class="flex items-center gap-2 mb-2">
+        <input type="text" name="exercise_${idx}_name"
+               placeholder="Exercise name" required
+               class="flex-1 bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none">
+        <button type="button" onclick="removeExercise(this)"
+                class="p-1.5 text-gray-500 hover:text-red-400 transition">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="set-rows space-y-1.5 mb-2">
+        ${[0,1,2].map(si => buildSetRow(idx, si)).join('')}
+      </div>
+      <button type="button" onclick="addSet(this, ${idx})"
+              class="text-xs font-medium" style="color:var(--accent)">+ Add set</button>`;
+
+    container.appendChild(block);
+    exerciseCount++;
+    block.querySelector('input[type="text"]').focus();
+  }
+
+  function buildSetRow(exIdx, setIdx) {
+    const n = setIdx + 1;
+    return `<div class="set-row flex items-center gap-2">
+      <span class="text-xs text-gray-500 w-9 flex-shrink-0">Set ${n}</span>
+      <input type="number" name="exercise_${exIdx}_set_${setIdx}_reps"
+             min="1" max="999" placeholder="Reps"
+             class="w-16 bg-gray-900 border border-gray-700 rounded-lg px-2 py-1.5 text-sm text-white placeholder-gray-500 focus:outline-none text-center">
+      <input type="number" name="exercise_${exIdx}_set_${setIdx}_weight_kg"
+             min="0" max="9999" step="0.5" placeholder="kg"
+             class="w-16 bg-gray-900 border border-gray-700 rounded-lg px-2 py-1.5 text-sm text-white placeholder-gray-500 focus:outline-none text-center">
+      <span class="text-xs text-gray-600">kg</span>
+    </div>`;
+  }
+
+  function addSet(btn, exIdx) {
+    const block = btn.closest('.exercise-block');
+    const rows  = block.querySelectorAll('.set-row');
+    const si    = rows.length;
+    const cont  = block.querySelector('.set-rows');
+    cont.insertAdjacentHTML('beforeend', buildSetRow(exIdx, si));
+  }
+
+  function removeExercise(btn) {
+    const block = btn.closest('.exercise-block');
+    const container = document.getElementById('exercises-container');
+    if (container.querySelectorAll('.exercise-block').length > 1) {
+      block.remove();
+    }
+  }
+
+  function pickMood(type, val) {
+    const group = document.getElementById(type + '-group');
+    group.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('sel'));
+    group.querySelector(`[data-val="${val}"]`).classList.add('sel');
+    document.getElementById(type + '_input').value = val;
+  }
+</script>
+{% endblock %}

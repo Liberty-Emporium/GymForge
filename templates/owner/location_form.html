@@ -1,0 +1,142 @@
+{% extends "base/owner_base.html" %}
+{% block title %}{% if location %}Edit Location{% else %}New Location{% endif %}{% endblock %}
+{% block page_title %}{% if location %}Edit — {{ location.name }}{% else %}Add Location{% endif %}{% endblock %}
+
+{% block header_actions %}
+<a href="{% url 'gym_owner:location_list' %}" class="text-sm text-gray-400 hover:text-white transition-colors">
+  ← Back to Locations
+</a>
+{% endblock %}
+
+{% block content %}
+<form method="post" class="max-w-2xl space-y-6">
+  {% csrf_token %}
+
+  <!-- Basic Info -->
+  <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-5">
+    <h2 class="text-sm font-semibold text-white border-b border-gray-800 pb-3">Location Details</h2>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-300 mb-1">Name <span class="text-red-400">*</span></label>
+      <input type="text" name="name"
+             value="{{ post.name|default:location.name|default:'' }}"
+             placeholder="Main Branch"
+             class="w-full rounded-lg bg-gray-800 border {% if errors.name %}border-red-500{% else %}border-gray-700{% endif %} px-4 py-2.5 text-white text-sm focus:outline-none focus:ring-2"
+             style="--tw-ring-color: var(--accent)">
+      {% if errors.name %}<p class="mt-1 text-xs text-red-400">{{ errors.name }}</p>{% endif %}
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-300 mb-1">Address <span class="text-red-400">*</span></label>
+      <textarea name="address" rows="2"
+                placeholder="123 Main St, City, State ZIP"
+                class="w-full rounded-lg bg-gray-800 border {% if errors.address %}border-red-500{% else %}border-gray-700{% endif %} px-4 py-2.5 text-white text-sm focus:outline-none focus:ring-2 resize-none"
+                style="--tw-ring-color: var(--accent)">{{ post.address|default:location.address|default:'' }}</textarea>
+      {% if errors.address %}<p class="mt-1 text-xs text-red-400">{{ errors.address }}</p>{% endif %}
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-1">Phone</label>
+        <input type="tel" name="phone"
+               value="{{ post.phone|default:location.phone|default:'' }}"
+               class="w-full rounded-lg bg-gray-800 border border-gray-700 px-4 py-2.5 text-white text-sm focus:outline-none focus:ring-2"
+               style="--tw-ring-color: var(--accent)">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-1">Email</label>
+        <input type="email" name="email"
+               value="{{ post.email|default:location.email|default:'' }}"
+               class="w-full rounded-lg bg-gray-800 border border-gray-700 px-4 py-2.5 text-white text-sm focus:outline-none focus:ring-2"
+               style="--tw-ring-color: var(--accent)">
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-300 mb-1">Timezone</label>
+      <select name="timezone"
+              class="w-full rounded-lg bg-gray-800 border border-gray-700 px-4 py-2.5 text-white text-sm focus:outline-none focus:ring-2"
+              style="--tw-ring-color: var(--accent)">
+        {% with tz=post.timezone|default:location.timezone|default:'America/New_York' %}
+        <option value="America/New_York"   {% if tz == 'America/New_York' %}selected{% endif %}>Eastern (ET)</option>
+        <option value="America/Chicago"    {% if tz == 'America/Chicago' %}selected{% endif %}>Central (CT)</option>
+        <option value="America/Denver"     {% if tz == 'America/Denver' %}selected{% endif %}>Mountain (MT)</option>
+        <option value="America/Los_Angeles"{% if tz == 'America/Los_Angeles' %}selected{% endif %}>Pacific (PT)</option>
+        <option value="America/Anchorage"  {% if tz == 'America/Anchorage' %}selected{% endif %}>Alaska (AKT)</option>
+        <option value="Pacific/Honolulu"   {% if tz == 'Pacific/Honolulu' %}selected{% endif %}>Hawaii (HT)</option>
+        <option value="Europe/London"      {% if tz == 'Europe/London' %}selected{% endif %}>London (GMT/BST)</option>
+        <option value="Europe/Paris"       {% if tz == 'Europe/Paris' %}selected{% endif %}>Paris/Berlin (CET)</option>
+        <option value="Australia/Sydney"   {% if tz == 'Australia/Sydney' %}selected{% endif %}>Sydney (AEDT)</option>
+        {% endwith %}
+      </select>
+    </div>
+
+    {% if location %}
+    <label class="flex items-center gap-2.5 cursor-pointer">
+      <input type="checkbox" name="is_active" value="on"
+             class="rounded border-gray-600"
+             {% if post.is_active == 'on' or location.is_active %}checked{% endif %}>
+      <span class="text-sm text-gray-300">Location is active</span>
+    </label>
+    {% endif %}
+  </div>
+
+  <!-- Hours -->
+  <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-4">
+    <h2 class="text-sm font-semibold text-white border-b border-gray-800 pb-3">Opening Hours</h2>
+
+    {% for day_code, day_label in days %}
+    {% with h=hours_map|default:{} %}
+    <div class="grid grid-cols-12 gap-3 items-center" id="day-row-{{ day_code }}">
+      <div class="col-span-3">
+        <span class="text-sm text-gray-300 font-medium">{{ day_label }}</span>
+      </div>
+      <div class="col-span-2 flex items-center gap-1.5">
+        <input type="checkbox" name="hours_{{ day_code }}_closed" value="on"
+               id="closed_{{ day_code }}"
+               class="rounded border-gray-600"
+               onchange="toggleDay('{{ day_code }}', this.checked)"
+               {% if post %}
+                 {% if post|get_key:'hours_'|add:day_code|add:'_closed' == 'on' %}checked{% endif %}
+               {% else %}
+                 {% for key, val in hours_map.items %}{% if key == day_code and val.is_closed %}checked{% endif %}{% endfor %}
+               {% endif %}>
+        <label for="closed_{{ day_code }}" class="text-xs text-gray-500 cursor-pointer">Closed</label>
+      </div>
+      <div class="col-span-7 grid grid-cols-2 gap-2" id="times-{{ day_code }}">
+        <input type="time" name="hours_{{ day_code }}_open"
+               class="rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 text-white text-sm focus:outline-none"
+               value="{% for key, val in hours_map.items %}{% if key == day_code %}{{ val.open_time|default:'' }}{% endif %}{% endfor %}">
+        <input type="time" name="hours_{{ day_code }}_close"
+               class="rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 text-white text-sm focus:outline-none"
+               value="{% for key, val in hours_map.items %}{% if key == day_code %}{{ val.close_time|default:'' }}{% endif %}{% endfor %}">
+      </div>
+    </div>
+    {% endwith %}
+    {% endfor %}
+  </div>
+
+  <div class="flex items-center gap-4">
+    <button type="submit"
+            class="px-6 py-2.5 rounded-lg text-sm font-semibold text-white accent-btn transition-opacity hover:opacity-90">
+      {% if location %}Save Changes{% else %}Add Location{% endif %}
+    </button>
+    <a href="{% url 'gym_owner:location_list' %}" class="text-sm text-gray-500 hover:text-gray-300 transition-colors">
+      Cancel
+    </a>
+  </div>
+</form>
+
+<script>
+function toggleDay(day, isClosed) {
+  const timesDiv = document.getElementById('times-' + day);
+  timesDiv.style.opacity = isClosed ? '0.3' : '1';
+  timesDiv.querySelectorAll('input').forEach(el => el.disabled = isClosed);
+}
+// Init on load
+document.querySelectorAll('[id^="closed_"]').forEach(cb => {
+  const day = cb.id.replace('closed_', '');
+  toggleDay(day, cb.checked);
+});
+</script>
+{% endblock %}

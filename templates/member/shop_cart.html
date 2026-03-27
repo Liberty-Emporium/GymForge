@@ -1,0 +1,87 @@
+{% extends "base/member_base.html" %}
+{% block title %}Cart{% endblock %}
+
+{% block content %}
+<div class="space-y-4 pb-24">
+
+  <div class="flex items-center gap-3">
+    <a href="{% url 'shop:catalog' %}" class="text-gray-400 hover:text-white transition-colors">
+      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+    </a>
+    <h1 class="text-xl font-bold text-white">Your Cart</h1>
+  </div>
+
+  {% if items %}
+  <!-- Cart items -->
+  <div class="bg-gray-800 rounded-2xl overflow-hidden divide-y divide-gray-700/50">
+    {% for item in items %}
+    <div class="p-4 flex items-start gap-3">
+      {% if item.product.image %}
+      <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}"
+           class="w-16 h-16 object-cover rounded-xl flex-shrink-0">
+      {% else %}
+      <div class="w-16 h-16 bg-gray-700 rounded-xl flex items-center justify-center flex-shrink-0">
+        <svg class="w-6 h-6 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+        </svg>
+      </div>
+      {% endif %}
+      <div class="flex-1 min-w-0">
+        <p class="font-semibold text-white text-sm">{{ item.product.name }}</p>
+        <p class="text-xs text-gray-500">${{ item.product.price }} each</p>
+        <form method="post" action="{% url 'shop:cart_update' item.product.pk %}" class="flex items-center gap-2 mt-2">
+          {% csrf_token %}
+          <select name="qty" onchange="this.form.submit()"
+                  class="bg-gray-700 border border-gray-600 rounded-lg px-2 py-1 text-sm text-white focus:outline-none">
+            {% for i in "12345678910" %}{% endfor %}
+            {% for n in item.product.stock|default:10|divisibleby:1 %}{% endfor %}
+            {% with max_qty=item.product.stock|default:10 %}
+            {% for i in "1234567890" %}
+            {% if forloop.counter <= 10 %}
+            <option value="{{ forloop.counter }}" {% if forloop.counter == item.qty %}selected{% endif %}>
+              {{ forloop.counter }}
+            </option>
+            {% endif %}
+            {% endfor %}
+            {% endwith %}
+          </select>
+        </form>
+      </div>
+      <div class="flex flex-col items-end gap-2">
+        <p class="font-black text-white">${{ item.line_total }}</p>
+        <form method="post" action="{% url 'shop:cart_remove' item.product.pk %}">
+          {% csrf_token %}
+          <button type="submit" class="text-xs text-red-400 hover:text-red-300 transition-colors">Remove</button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Total + checkout -->
+  <div class="bg-gray-800 rounded-2xl p-5 space-y-4">
+    <div class="flex items-center justify-between">
+      <p class="text-gray-400">Subtotal</p>
+      <p class="text-xl font-black text-white">${{ total }}</p>
+    </div>
+    <a href="{% url 'shop:checkout' %}"
+       class="block accent-btn text-center py-4 rounded-xl font-bold text-base">
+      Proceed to Checkout →
+    </a>
+    <a href="{% url 'shop:catalog' %}" class="block text-center text-sm text-gray-500 hover:text-gray-300">
+      Continue Shopping
+    </a>
+  </div>
+
+  {% else %}
+  <div class="bg-gray-800 rounded-2xl py-16 text-center space-y-4">
+    <svg class="w-14 h-14 text-gray-600 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+    </svg>
+    <p class="text-gray-500 text-sm">Your cart is empty.</p>
+    <a href="{% url 'shop:catalog' %}" class="inline-block accent-btn px-6 py-3 rounded-xl font-semibold text-sm">Browse Products</a>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

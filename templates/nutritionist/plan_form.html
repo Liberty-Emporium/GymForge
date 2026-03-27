@@ -1,0 +1,108 @@
+{% extends "base/nutritionist_base.html" %}
+{% block title %}{% if plan %}Edit Plan{% else %}New Plan{% endif %} — {{ member.full_name }}{% endblock %}
+{% block page_title %}{% if plan %}Edit Nutrition Plan{% else %}New Nutrition Plan{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl space-y-5">
+
+  <a href="{% url 'nutritionist:client_detail' member.pk %}" class="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors">
+    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+    Back to {{ member.full_name }}
+  </a>
+
+  <!-- Client context strip -->
+  {% if health %}
+  <div class="bg-gray-800 rounded-xl px-5 py-3 flex flex-wrap gap-4 text-xs text-gray-400">
+    {% if health.dietary_preference %}<span class="capitalize"><strong class="text-white">Diet:</strong> {{ health.dietary_preference }}</span>{% endif %}
+    {% if health.food_allergies %}<span class="text-red-400"><strong class="text-white">Allergies:</strong> {{ health.food_allergies }}</span>{% endif %}
+    {% if health.disliked_foods %}<span><strong class="text-white">Dislikes:</strong> {{ health.disliked_foods }}</span>{% endif %}
+  </div>
+  {% endif %}
+
+  <form method="post" class="bg-gray-800 rounded-xl p-6 space-y-6">
+    {% csrf_token %}
+
+    <!-- Macro targets -->
+    <div>
+      <p class="text-sm font-semibold text-white mb-3">Daily Targets</p>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-medium text-gray-400 mb-1.5">Calories (kcal)</label>
+          <input type="number" name="daily_calories" min="500" max="10000"
+                 value="{{ plan.daily_calories|default:'' }}"
+                 class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-accent transition-colors">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-400 mb-1.5">Protein (g)</label>
+          <input type="number" name="protein_g" min="0" max="500"
+                 value="{{ plan.protein_g|default:'' }}"
+                 class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-accent transition-colors">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-400 mb-1.5">Carbohydrates (g)</label>
+          <input type="number" name="carbs_g" min="0" max="1000"
+                 value="{{ plan.carbs_g|default:'' }}"
+                 class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-accent transition-colors">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-400 mb-1.5">Fat (g)</label>
+          <input type="number" name="fat_g" min="0" max="500"
+                 value="{{ plan.fat_g|default:'' }}"
+                 class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-accent transition-colors">
+        </div>
+      </div>
+    </div>
+
+    <!-- Meal plan — one textarea per meal, one item per line -->
+    <div>
+      <p class="text-sm font-semibold text-white mb-1">Meal Plan</p>
+      <p class="text-xs text-gray-500 mb-3">Enter one food item per line for each meal.</p>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-gray-400 mb-1.5">Breakfast</label>
+          <textarea name="meal_breakfast" rows="3" placeholder="e.g. Oats with berries and honey"
+                    class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-accent transition-colors resize-none">{{ meal_breakfast }}</textarea>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-400 mb-1.5">Lunch</label>
+          <textarea name="meal_lunch" rows="3" placeholder="e.g. Grilled chicken salad"
+                    class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-accent transition-colors resize-none">{{ meal_lunch }}</textarea>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-400 mb-1.5">Dinner</label>
+          <textarea name="meal_dinner" rows="3" placeholder="e.g. Salmon with sweet potato"
+                    class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-accent transition-colors resize-none">{{ meal_dinner }}</textarea>
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-gray-400 mb-1.5">Snacks</label>
+          <textarea name="meal_snacks" rows="2" placeholder="e.g. Greek yoghurt, handful of almonds"
+                    class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-accent transition-colors resize-none">{{ meal_snacks }}</textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Nutritionist notes -->
+    <div>
+      <label class="block text-sm font-semibold text-white mb-1.5">Nutritionist Notes</label>
+      <textarea name="nutritionist_notes" rows="4"
+                placeholder="Clinical notes, rationale, special instructions…"
+                class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-accent transition-colors resize-none">{{ plan.nutritionist_notes|default:'' }}</textarea>
+    </div>
+
+    <div class="bg-green-900/20 border border-green-700/30 rounded-lg px-4 py-3 text-xs text-green-400">
+      This plan will be marked as <strong>nutritionist reviewed</strong> on save.
+    </div>
+
+    <div class="flex gap-3 pt-2">
+      <button type="submit" class="flex-1 accent-btn py-3 rounded-xl font-semibold text-sm">
+        {% if plan %}Save Changes{% else %}Create Plan{% endif %}
+      </button>
+      <a href="{% url 'nutritionist:client_detail' member.pk %}"
+         class="px-5 py-3 rounded-xl border border-gray-600 text-sm text-gray-300 hover:border-gray-400 transition-colors text-center">
+        Cancel
+      </a>
+    </div>
+  </form>
+
+</div>
+{% endblock %}

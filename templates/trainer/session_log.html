@@ -1,0 +1,60 @@
+{% extends "base/trainer_base.html" %}
+{% block title %}Log Session — {{ appt.member.full_name }}{% endblock %}
+{% block page_title %}Log Session{% endblock %}
+
+{% block content %}
+<div class="max-w-lg space-y-5">
+
+  <a href="{% url 'trainer:schedule' %}" class="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors">
+    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+    Back to Schedule
+  </a>
+
+  <!-- Session summary -->
+  <div class="bg-gray-800 rounded-xl p-5">
+    <p class="text-xs text-gray-500 uppercase tracking-wider mb-3">Session Details</p>
+    <dl class="space-y-2 text-sm">
+      <div class="flex justify-between">
+        <dt class="text-gray-400">Client</dt>
+        <dd class="text-white font-medium">{{ appt.member.full_name }}</dd>
+      </div>
+      <div class="flex justify-between">
+        <dt class="text-gray-400">Date &amp; Time</dt>
+        <dd class="text-white">{{ appt.scheduled_at|date:"D d M Y, g:i A" }}</dd>
+      </div>
+      <div class="flex justify-between">
+        <dt class="text-gray-400">Duration</dt>
+        <dd class="text-white">{{ appt.duration_minutes }} minutes</dd>
+      </div>
+      <div class="flex justify-between">
+        <dt class="text-gray-400">Type</dt>
+        <dd class="text-white">{{ appt.get_appointment_type_display }}</dd>
+      </div>
+    </dl>
+  </div>
+
+  <!-- Log form -->
+  <div class="bg-gray-800 rounded-xl p-5">
+    <p class="font-semibold text-white text-sm mb-4">Session Notes</p>
+    <form method="post" class="space-y-4">
+      {% csrf_token %}
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-1.5">Post-Session Notes</label>
+        <textarea name="notes_after" rows="5"
+                  placeholder="What was covered? Client progress, areas to focus on next session, any concerns…"
+                  class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-accent transition-colors resize-none">{{ appt.notes_after }}</textarea>
+      </div>
+      <div class="flex gap-3 pt-1">
+        <button type="submit" class="flex-1 accent-btn py-3 rounded-xl font-semibold text-sm">
+          Mark as Completed
+        </button>
+        <a href="{% url 'trainer:schedule' %}"
+           class="px-5 py-3 rounded-xl border border-gray-600 text-sm text-gray-300 hover:border-gray-400 transition-colors text-center">
+          Cancel
+        </a>
+      </div>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

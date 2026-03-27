@@ -1,0 +1,38 @@
+<form hx-post="{% url 'leads:followup_create' lead.pk %}"
+      hx-target="#followup-form-wrap"
+      hx-swap="innerHTML"
+      class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+  {% csrf_token %}
+
+  <div>
+    <label class="block text-xs text-gray-500 mb-1">Method</label>
+    <select name="method"
+            class="w-full rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 text-white text-sm focus:outline-none">
+      {% for code, label in methods %}
+      <option value="{{ code }}" {% if post.method == code %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+
+  <div>
+    <label class="block text-xs text-gray-500 mb-1">Date & Time *</label>
+    <input type="datetime-local" name="scheduled_at"
+           value="{{ post.scheduled_at|default:'' }}"
+           class="w-full rounded-lg bg-gray-800 border {% if errors.scheduled_at %}border-red-500{% else %}border-gray-700{% endif %} px-3 py-2 text-white text-sm focus:outline-none">
+    {% if errors.scheduled_at %}<p class="text-xs text-red-400 mt-0.5">{{ errors.scheduled_at }}</p>{% endif %}
+  </div>
+
+  <div class="sm:col-span-2">
+    <label class="block text-xs text-gray-500 mb-1">Notes</label>
+    <textarea name="notes" rows="2"
+              placeholder="What to cover in this follow-up…"
+              class="w-full rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 text-white text-sm focus:outline-none resize-none">{{ post.notes|default:'' }}</textarea>
+  </div>
+
+  <div class="sm:col-span-2">
+    <button type="submit"
+            class="px-5 py-2 rounded-lg text-sm font-semibold text-white accent-btn transition-opacity hover:opacity-90">
+      Schedule Follow-up
+    </button>
+  </div>
+</form>

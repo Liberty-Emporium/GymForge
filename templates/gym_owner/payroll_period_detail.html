@@ -1,0 +1,76 @@
+{% extends "base/owner_base.html" %}
+{% block title %}Payroll {{ period.period_start }} – {{ period.period_end }}{% endblock %}
+{% block page_title %}Payroll Period Detail{% endblock %}
+
+{% block header_actions %}
+<div class="flex items-center gap-3">
+  <a href="{% url 'payroll:period_list' %}" class="px-4 py-2 rounded-lg text-sm font-semibold bg-gray-700 text-gray-300 hover:bg-gray-600 transition-colors">← All Periods</a>
+  <a href="{% url 'payroll:period_export_csv' period.pk %}" class="accent-btn px-4 py-2 rounded-lg text-sm font-semibold">Download CSV</a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+
+  <!-- Period meta -->
+  <div class="bg-gray-800 rounded-xl px-5 py-4 flex flex-wrap gap-6">
+    <div>
+      <p class="text-xs text-gray-500 uppercase tracking-wider">Period</p>
+      <p class="text-white font-semibold mt-0.5">{{ period.period_start|date:"d M Y" }} – {{ period.period_end|date:"d M Y" }}</p>
+    </div>
+    <div>
+      <p class="text-xs text-gray-500 uppercase tracking-wider">Status</p>
+      <span class="inline-block mt-0.5 text-xs px-2 py-0.5 rounded-full
+        {% if period.status == 'paid' %}bg-green-900/40 text-green-400
+        {% elif period.status == 'approved' %}bg-blue-900/40 text-blue-400
+        {% else %}bg-yellow-900/40 text-yellow-400{% endif %}">
+        {{ period.get_status_display }}
+      </span>
+    </div>
+    <div>
+      <p class="text-xs text-gray-500 uppercase tracking-wider">Staff Count</p>
+      <p class="text-white font-semibold mt-0.5">{{ period.staff_count }}</p>
+    </div>
+    <div>
+      <p class="text-xs text-gray-500 uppercase tracking-wider">Total Payout</p>
+      <p class="text-xl font-black accent-text mt-0.5">${{ period.total_payout }}</p>
+    </div>
+  </div>
+
+  <!-- Summary table -->
+  <div class="bg-gray-800 rounded-xl overflow-hidden">
+    {% if rows %}
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-gray-700 text-xs text-gray-500 uppercase tracking-wider">
+          <th class="text-left px-5 py-3 font-medium">Staff Member</th>
+          <th class="text-right px-5 py-3 font-medium">Hours</th>
+          <th class="text-right px-5 py-3 font-medium">Classes</th>
+          <th class="text-right px-5 py-3 font-medium">Total</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-700/50">
+        {% for row in rows %}
+        <tr class="hover:bg-gray-700/20 transition-colors">
+          <td class="px-5 py-3 text-white font-medium">{{ row.name }}</td>
+          <td class="px-5 py-3 text-gray-300 text-right">{{ row.hours }}</td>
+          <td class="px-5 py-3 text-gray-300 text-right">{{ row.classes }}</td>
+          <td class="px-5 py-3 font-semibold text-white text-right">${{ row.total }}</td>
+        </tr>
+        {% endfor %}
+        <!-- Grand total row -->
+        <tr class="border-t-2 border-gray-600">
+          <td class="px-5 py-3 font-bold text-white" colspan="3">Grand Total</td>
+          <td class="px-5 py-3 font-black text-xl accent-text text-right">${{ period.total_payout }}</td>
+        </tr>
+      </tbody>
+    </table>
+    {% else %}
+    <div class="py-14 text-center">
+      <p class="text-gray-500 text-sm">No staff with active pay rates found for this period.</p>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

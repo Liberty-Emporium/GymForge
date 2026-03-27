@@ -1,0 +1,37 @@
+<a href="{% url 'leads:detail' lead.pk %}"
+   class="block bg-gray-900 border border-gray-800 rounded-xl p-3 hover:border-gray-600 transition-colors group">
+  <div class="flex items-start justify-between gap-2 mb-2">
+    <div class="flex items-center gap-2">
+      <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
+           style="background-color: {{ accent|default:'#6b7280' }}">
+        {{ lead.first_name|first|upper }}
+      </div>
+      <span class="text-sm font-semibold text-white group-hover:text-white leading-tight">
+        {{ lead.full_name }}
+      </span>
+    </div>
+    <span class="text-xs text-gray-500 whitespace-nowrap flex-shrink-0">
+      {{ lead.created_at|date:"M d" }}
+    </span>
+  </div>
+
+  <div class="space-y-1 pl-9">
+    {% if lead.email %}
+    <p class="text-xs text-gray-400 truncate">{{ lead.email }}</p>
+    {% endif %}
+    {% if lead.phone %}
+    <p class="text-xs text-gray-500">{{ lead.phone }}</p>
+    {% endif %}
+    <div class="flex items-center gap-2 pt-1">
+      <span class="px-2 py-0.5 rounded-full text-xs bg-gray-800 text-gray-400 border border-gray-700">
+        {{ lead.get_source_display }}
+      </span>
+      {% if lead.assigned_to %}
+      <span class="text-xs text-gray-600">→ {{ lead.assigned_to.get_full_name|default:lead.assigned_to.username }}</span>
+      {% endif %}
+    </div>
+    {% if lead.notes %}
+    <p class="text-xs text-gray-600 leading-snug line-clamp-2">{{ lead.notes|truncatechars:60 }}</p>
+    {% endif %}
+  </div>
+</a>

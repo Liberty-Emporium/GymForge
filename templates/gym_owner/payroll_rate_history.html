@@ -1,0 +1,61 @@
+{% extends "base/owner_base.html" %}
+{% block title %}Pay Rate History — {{ staff_user.get_full_name }}{% endblock %}
+{% block page_title %}Pay Rate History{% endblock %}
+
+{% block header_actions %}
+<a href="{% url 'payroll:rate_list' %}" class="px-4 py-2 rounded-lg text-sm font-semibold bg-gray-700 text-gray-300 hover:bg-gray-600 transition-colors">← Back to Rates</a>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+
+  <!-- Staff header -->
+  <div class="bg-gray-800 rounded-xl px-5 py-4">
+    <p class="text-white font-semibold">{{ staff_user.get_full_name }}</p>
+    <p class="text-xs text-gray-400 mt-0.5">{{ staff_user.role|capfirst }} · {{ staff_user.email }}</p>
+  </div>
+
+  <!-- Rate history table -->
+  <div class="bg-gray-800 rounded-xl overflow-hidden">
+    {% if rates %}
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-gray-700 text-xs text-gray-500 uppercase tracking-wider">
+          <th class="text-left px-5 py-3 font-medium">Pay Type</th>
+          <th class="text-left px-5 py-3 font-medium">Rate</th>
+          <th class="text-left px-5 py-3 font-medium">Effective From</th>
+          <th class="text-left px-5 py-3 font-medium">Effective To</th>
+          <th class="text-left px-5 py-3 font-medium">Status</th>
+          <th class="text-left px-5 py-3 font-medium">Notes</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-700/50">
+        {% for rate in rates %}
+        <tr class="hover:bg-gray-700/20 transition-colors {% if not rate.is_current %}opacity-60{% endif %}">
+          <td class="px-5 py-3 text-gray-300">{{ rate.get_pay_type_display }}</td>
+          <td class="px-5 py-3 font-semibold text-white">${{ rate.rate }}</td>
+          <td class="px-5 py-3 text-gray-300">{{ rate.effective_from|date:"d M Y" }}</td>
+          <td class="px-5 py-3 text-gray-400">
+            {% if rate.effective_to %}{{ rate.effective_to|date:"d M Y" }}{% else %}—{% endif %}
+          </td>
+          <td class="px-5 py-3">
+            {% if rate.effective_to %}
+            <span class="text-xs px-2 py-0.5 rounded-full bg-gray-700 text-gray-400">Inactive</span>
+            {% else %}
+            <span class="text-xs px-2 py-0.5 rounded-full bg-green-900/40 text-green-400">Active</span>
+            {% endif %}
+          </td>
+          <td class="px-5 py-3 text-gray-400 text-xs">{{ rate.notes|default:"—" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="py-14 text-center">
+      <p class="text-gray-500 text-sm">No pay rate history for this staff member.</p>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

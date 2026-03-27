@@ -1,0 +1,38 @@
+{% extends "base/trainer_base.html" %}
+{% block title %}Generate AI Plan — {{ member.full_name }}{% endblock %}
+{% block page_title %}Generate AI Plan{% endblock %}
+
+{% block content %}
+<div class="max-w-lg space-y-6">
+  <a href="{% url 'trainer:client_detail' member.pk %}" class="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors">
+    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+    Back to {{ member.full_name }}
+  </a>
+
+  <div class="bg-gray-800 rounded-xl p-6 space-y-5">
+    <div>
+      <h2 class="text-lg font-bold text-white">AI Workout Plan Generator</h2>
+      <p class="text-sm text-gray-400 mt-1">
+        GymForge AI will analyse <strong class="text-white">{{ member.full_name }}'s</strong> health profile,
+        fitness goal, injury history, and recent workout data to create a personalised 4-week plan.
+      </p>
+    </div>
+
+    <div class="bg-gray-700/50 rounded-lg p-4 text-xs text-gray-400 space-y-1">
+      <p>The generated plan will be saved as a <strong class="text-white">draft</strong>.</p>
+      <p>You can review and edit it before approving — approving activates it for the member.</p>
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit"
+              class="w-full accent-btn py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+        </svg>
+        Generate AI Plan
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}

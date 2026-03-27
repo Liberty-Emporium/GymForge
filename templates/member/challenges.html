@@ -1,0 +1,71 @@
+{% extends "base/member_base.html" %}
+{% block title %}Challenges{% endblock %}
+
+{% block content %}
+<div class="space-y-5 pb-24">
+
+  <div class="flex items-center justify-between">
+    <h1 class="text-xl font-bold text-white">Gym Challenges</h1>
+    <a href="{% url 'community:feed' %}" class="text-sm accent-text font-semibold">← Feed</a>
+  </div>
+
+  <!-- Active challenges -->
+  <section class="space-y-3">
+    <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider">Active Now</h2>
+    {% for challenge in active %}
+    <a href="{% url 'community:challenge_detail' challenge.pk %}"
+       class="block bg-gray-800 rounded-2xl overflow-hidden hover:bg-gray-750 transition-colors">
+      {% if challenge.banner_image %}
+      <img src="{{ challenge.banner_image.url }}" alt="" class="w-full h-28 object-cover">
+      {% else %}
+      <div class="w-full h-8 accent-btn opacity-60"></div>
+      {% endif %}
+      <div class="p-4">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <p class="font-bold text-white text-base">{{ challenge.title }}</p>
+            <p class="text-xs text-gray-400 mt-0.5 line-clamp-2">{{ challenge.description }}</p>
+          </div>
+          {% if challenge.pk in joined_ids %}
+          <span class="text-xs bg-green-900/40 text-green-400 px-2 py-0.5 rounded-full flex-shrink-0">Joined</span>
+          {% endif %}
+        </div>
+        <div class="mt-3 flex items-center gap-4 text-xs text-gray-500">
+          <span>Ends {{ challenge.end_date|date:"d M" }}</span>
+          <span class="capitalize">{{ challenge.challenge_type }}</span>
+          <span>Target: {{ challenge.target_value }} {{ challenge.unit }}</span>
+        </div>
+        {% if challenge.prize_description %}
+        <p class="mt-2 text-xs text-yellow-400">🏆 {{ challenge.prize_description }}</p>
+        {% endif %}
+      </div>
+    </a>
+    {% empty %}
+    <div class="bg-gray-800 rounded-2xl py-10 text-center">
+      <p class="text-gray-500 text-sm">No active challenges right now.</p>
+    </div>
+    {% endfor %}
+  </section>
+
+  <!-- Upcoming challenges -->
+  {% if upcoming %}
+  <section class="space-y-3">
+    <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider">Coming Soon</h2>
+    {% for challenge in upcoming %}
+    <a href="{% url 'community:challenge_detail' challenge.pk %}"
+       class="block bg-gray-800 rounded-2xl p-4 opacity-70 hover:opacity-90 transition-opacity">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <p class="font-semibold text-white">{{ challenge.title }}</p>
+          <p class="text-xs text-gray-400 mt-0.5">{{ challenge.description|truncatechars:80 }}</p>
+        </div>
+        <span class="text-xs bg-blue-900/40 text-blue-400 px-2 py-0.5 rounded-full flex-shrink-0">Soon</span>
+      </div>
+      <p class="mt-2 text-xs text-gray-500">Starts {{ challenge.start_date|date:"d M Y" }}</p>
+    </a>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+</div>
+{% endblock %}

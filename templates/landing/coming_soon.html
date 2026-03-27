@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% if profile %}{{ profile.gym_name }} — {% endif %}Coming Soon</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --primary: {{ profile.primary_color|default:"#1a1a2e" }};
+      --accent:  {{ profile.accent_color|default:"#e94560" }};
+    }
+    body { background-color: var(--primary); }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center px-6 text-center">
+
+  {% if profile.logo %}
+  <img src="{{ profile.logo.url }}" alt="{{ profile.gym_name }}"
+       class="w-20 h-20 rounded-2xl object-contain bg-white/10 p-2 mb-8">
+  {% else %}
+  <div class="w-20 h-20 rounded-2xl flex items-center justify-center text-3xl font-black text-white mb-8"
+       style="background-color: var(--accent)">
+    {{ profile.gym_name|first|upper|default:"G" }}
+  </div>
+  {% endif %}
+
+  <h1 class="text-4xl sm:text-5xl font-black text-white tracking-tight mb-3">
+    {% if profile %}{{ profile.gym_name }}{% else %}Coming Soon{% endif %}
+  </h1>
+
+  {% if profile.tagline %}
+  <p class="text-white/60 text-lg mb-6">{{ profile.tagline }}</p>
+  {% endif %}
+
+  <div class="w-16 h-1 rounded-full mb-8" style="background-color: var(--accent)"></div>
+
+  <p class="text-white/70 text-base max-w-sm leading-relaxed">
+    We're putting the finishing touches on something great.<br>
+    Check back soon — big things are coming.
+  </p>
+
+  {% if profile %}
+  <div class="mt-12 flex flex-col sm:flex-row items-center gap-4 text-sm text-white/40">
+    {% if profile.contact_email %}
+    <a href="mailto:{{ profile.contact_email }}"
+       class="hover:text-white/70 transition-colors">
+      {{ profile.contact_email }}
+    </a>
+    {% endif %}
+    {% if profile.contact_phone %}
+    <span class="hidden sm:inline">·</span>
+    <a href="tel:{{ profile.contact_phone }}"
+       class="hover:text-white/70 transition-colors">
+      {{ profile.contact_phone }}
+    </a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</body>
+</html>

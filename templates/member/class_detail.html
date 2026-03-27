@@ -1,0 +1,168 @@
+{% extends "base/member_base.html" %}
+
+{% block title %}{{ session.class_type.name }}{% endblock %}
+{% block header_title %}Class Detail{% endblock %}
+
+{% block content %}
+<div class="pb-6">
+
+  <!-- Cover image or gradient hero -->
+  {% if session.class_type.cover_image %}
+  <div class="relative h-48 overflow-hidden">
+    <img src="{{ session.class_type.cover_image.url }}"
+         alt="{{ session.class_type.name }}"
+         class="w-full h-full object-cover">
+    <div class="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/30 to-transparent"></div>
+    <div class="absolute bottom-4 left-4">
+      <h2 class="text-2xl font-bold text-white">{{ session.class_type.name }}</h2>
+    </div>
+  </div>
+  {% else %}
+  <div class="h-48 header-bg flex items-end px-4 pb-4">
+    <h2 class="text-2xl font-bold text-white">{{ session.class_type.name }}</h2>
+  </div>
+  {% endif %}
+
+  <div class="px-4 pt-4 space-y-4">
+
+    <!-- Session meta -->
+    <div class="bg-gray-800 rounded-2xl p-4 grid grid-cols-2 gap-4">
+      <div>
+        <p class="text-xs text-gray-500 mb-0.5">Date</p>
+        <p class="text-sm font-semibold text-white">{{ session.start_datetime|date:"D, d M Y" }}</p>
+      </div>
+      <div>
+        <p class="text-xs text-gray-500 mb-0.5">Time</p>
+        <p class="text-sm font-semibold text-white">
+          {{ session.start_datetime|date:"g:i A" }} – {{ session.end_datetime|date:"g:i A" }}
+        </p>
+      </div>
+      <div>
+        <p class="text-xs text-gray-500 mb-0.5">Location</p>
+        <p class="text-sm font-semibold text-white">{{ session.location.name }}</p>
+      </div>
+      <div>
+        <p class="text-xs text-gray-500 mb-0.5">Duration</p>
+        <p class="text-sm font-semibold text-white">{{ session.class_type.duration_minutes }} min</p>
+      </div>
+    </div>
+
+    <!-- Capacity -->
+    <div class="bg-gray-800 rounded-2xl p-4">
+      <div class="flex items-center justify-between mb-2">
+        <p class="text-sm font-semibold text-white">Availability</p>
+        <span class="text-xs font-medium
+          {% if session.is_full %}text-red-400{% elif session.spots_remaining <= 3 %}text-yellow-400{% else %}text-green-400{% endif %}">
+          {% if session.is_full %}
+            Full · {{ session.waitlist_count }} on waitlist
+          {% else %}
+            {{ session.spots_remaining }} of {{ session.capacity }} spots left
+          {% endif %}
+        </span>
+      </div>
+      <div class="h-2 bg-gray-700 rounded-full overflow-hidden">
+        <div class="h-full rounded-full
+          {% if session.is_full %}bg-red-500{% elif session.spots_remaining <= 3 %}bg-yellow-500{% else %}bg-green-500{% endif %}"
+          style="width: {% widthratio session.confirmed_count session.capacity 100 %}%">
+        </div>
+      </div>
+      <p class="text-xs text-gray-500 mt-1">
+        {{ session.confirmed_count }} confirmed booking{{ session.confirmed_count|pluralize }}
+      </p>
+    </div>
+
+    <!-- Class description -->
+    {% if session.class_type.description %}
+    <div class="bg-gray-800 rounded-2xl p-4">
+      <p class="text-sm font-semibold text-white mb-2">About this class</p>
+      <p class="text-sm text-gray-300 leading-relaxed">{{ session.class_type.description }}</p>
+    </div>
+    {% endif %}
+
+    <!-- Session notes -->
+    {% if session.session_notes %}
+    <div class="bg-gray-800 rounded-2xl p-4">
+      <p class="text-sm font-semibold text-white mb-2">Notes from trainer</p>
+      <p class="text-sm text-gray-300 leading-relaxed">{{ session.session_notes }}</p>
+    </div>
+    {% endif %}
+
+    <!-- Trainer card -->
+    {% if session.trainer %}
+    <div class="bg-gray-800 rounded-2xl p-4">
+      <p class="text-sm font-semibold text-white mb-3">Your Trainer</p>
+      <div class="flex items-start gap-3">
+        {% if session.trainer.profile_photo %}
+        <img src="{{ session.trainer.profile_photo.url }}"
+             alt="{{ session.trainer.get_full_name }}"
+             class="w-14 h-14 rounded-2xl object-cover flex-shrink-0">
+        {% else %}
+        <div class="w-14 h-14 rounded-2xl bg-accent/20 flex items-center justify-center flex-shrink-0">
+          <span class="text-xl font-bold text-accent">{{ session.trainer.first_name|first|upper }}</span>
+        </div>
+        {% endif %}
+        <div class="flex-1 min-w-0">
+          <p class="font-semibold text-white">{{ session.trainer.get_full_name }}</p>
+          {% if trainer_profile %}
+          {% if trainer_profile.specialties %}
+          <p class="text-xs text-accent mt-0.5">{{ trainer_profile.specialties }}</p>
+          {% endif %}
+          {% if trainer_profile.certifications %}
+          <p class="text-xs text-gray-500 mt-0.5">{{ trainer_profile.certifications }}</p>
+          {% endif %}
+          {% if trainer_profile.bio %}
+          <p class="text-sm text-gray-300 mt-2 leading-relaxed">{{ trainer_profile.bio }}</p>
+          {% endif %}
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Cancellation notice for confirmed bookings -->
+    {% if member_booking and member_booking.status == 'confirmed' %}
+    {% with membership=member.active_membership %}
+    {% if membership %}
+    <div class="bg-blue-900/20 border border-blue-700/30 rounded-xl p-3">
+      <p class="text-xs text-blue-300">
+        <span class="font-semibold">Cancellation policy:</span>
+        Free cancellation up to {{ membership.tier.cancellation_window_hours }}h before class.
+        {% if membership.tier.late_cancel_fee > 0 %}
+        A ${{ membership.tier.late_cancel_fee }} late-cancel fee applies after that.
+        {% endif %}
+      </p>
+    </div>
+    {% endif %}
+    {% endwith %}
+    {% endif %}
+
+    <!-- Booking action -->
+    <div id="book-btn-{{ session.id }}" class="pt-2">
+      {% if session.is_cancelled %}
+      <div class="w-full py-4 rounded-2xl bg-gray-700/50 text-center text-gray-400 font-semibold">
+        This class has been cancelled
+      </div>
+      {% else %}
+      {% include "member/partials/booking_button.html" with session=session booking=member_booking %}
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+
+<style>
+  /* Override booking button to be full-width on detail page */
+  #book-btn-{{ session.id }} form,
+  #book-btn-{{ session.id }} button {
+    width: 100%;
+  }
+  #book-btn-{{ session.id }} button {
+    padding: 1rem;
+    border-radius: 1rem;
+    font-size: 1rem;
+    font-weight: 700;
+    text-align: center;
+    justify-content: center;
+  }
+</style>
+{% endblock %}

@@ -1,0 +1,100 @@
+{% extends "base/owner_base.html" %}
+{% block title %}Payroll Periods{% endblock %}
+{% block page_title %}Payroll Periods{% endblock %}
+
+{% block header_actions %}
+<a href="{% url 'payroll:rate_list' %}" class="px-4 py-2 rounded-lg text-sm font-semibold bg-gray-700 text-gray-300 hover:bg-gray-600 transition-colors">Pay Rates</a>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+
+  {% if messages %}
+  <div class="space-y-2">
+    {% for message in messages %}
+    <div class="{% if message.tags == 'error' %}bg-red-900/20 border border-red-700/30{% else %}bg-green-900/20 border border-green-700/30{% endif %} rounded-xl px-4 py-3">
+      <p class="text-sm {% if message.tags == 'error' %}text-red-400{% else %}text-green-400{% endif %}">{{ message }}</p>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Generate form -->
+  <div class="bg-gray-800 rounded-xl p-5">
+    <p class="text-sm font-semibold text-white mb-4">Generate New Payroll Period</p>
+    <form method="post" class="flex flex-wrap items-end gap-4">
+      {% csrf_token %}
+      <div class="flex flex-col gap-1">
+        <label class="text-xs text-gray-400 uppercase tracking-wider">Period Start</label>
+        <input type="date" name="period_start" required
+               class="bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-accent">
+      </div>
+      <div class="flex flex-col gap-1">
+        <label class="text-xs text-gray-400 uppercase tracking-wider">Period End</label>
+        <input type="date" name="period_end" required
+               class="bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-accent">
+      </div>
+      <button type="submit" class="accent-btn px-5 py-2 rounded-lg text-sm font-semibold">Generate</button>
+    </form>
+  </div>
+
+  <!-- Period list -->
+  <div class="bg-gray-800 rounded-xl overflow-hidden">
+    {% if page_obj.object_list %}
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-gray-700 text-xs text-gray-500 uppercase tracking-wider">
+          <th class="text-left px-5 py-3 font-medium">Period</th>
+          <th class="text-left px-5 py-3 font-medium">Status</th>
+          <th class="text-left px-5 py-3 font-medium">Staff</th>
+          <th class="text-left px-5 py-3 font-medium">Total Payout</th>
+          <th class="px-5 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-700/50">
+        {% for period in page_obj %}
+        <tr class="hover:bg-gray-700/20 transition-colors">
+          <td class="px-5 py-3">
+            <p class="text-white font-medium">{{ period.period_start|date:"d M Y" }} – {{ period.period_end|date:"d M Y" }}</p>
+          </td>
+          <td class="px-5 py-3">
+            <span class="text-xs px-2 py-0.5 rounded-full
+              {% if period.status == 'paid' %}bg-green-900/40 text-green-400
+              {% elif period.status == 'approved' %}bg-blue-900/40 text-blue-400
+              {% else %}bg-yellow-900/40 text-yellow-400{% endif %}">
+              {{ period.get_status_display }}
+            </span>
+          </td>
+          <td class="px-5 py-3 text-gray-300">{{ period.staff_count }}</td>
+          <td class="px-5 py-3 font-semibold text-white">${{ period.total_payout }}</td>
+          <td class="px-5 py-3 text-right">
+            <a href="{% url 'payroll:period_detail' period.pk %}" class="text-sm accent-text hover:underline">View →</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {% if page_obj.has_other_pages %}
+    <div class="border-t border-gray-700 px-5 py-4 flex items-center justify-between">
+      <p class="text-xs text-gray-500">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</p>
+      <div class="flex gap-2">
+        {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}" class="px-3 py-1.5 rounded-lg text-xs text-gray-400 hover:text-white hover:bg-gray-700 transition-colors">← Prev</a>
+        {% endif %}
+        {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}" class="px-3 py-1.5 rounded-lg text-xs text-gray-400 hover:text-white hover:bg-gray-700 transition-colors">Next →</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="py-14 text-center">
+      <p class="text-gray-500 text-sm">No payroll periods yet. Generate one above.</p>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

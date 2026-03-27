@@ -1,0 +1,75 @@
+{% extends "base/trainer_base.html" %}
+{% block title %}My Clients{% endblock %}
+{% block page_title %}My Clients{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Upcoming appointments strip -->
+  {% if upcoming_appointments %}
+  <div class="bg-gray-800 rounded-xl overflow-hidden">
+    <div class="px-5 py-3 border-b border-gray-700">
+      <p class="font-semibold text-white text-sm">Upcoming This Week</p>
+    </div>
+    <div class="divide-y divide-gray-700/50">
+      {% for appt in upcoming_appointments %}
+      <div class="px-5 py-3 flex items-center justify-between text-sm">
+        <div>
+          <p class="font-medium text-white">{{ appt.member.full_name }}</p>
+          <p class="text-xs text-gray-500">{{ appt.scheduled_at|date:"D d M, g:i A" }} · {{ appt.get_appointment_type_display }}</p>
+        </div>
+        <a href="{% url 'trainer:session_log' appt.pk %}"
+           class="text-xs text-accent hover:underline">Log Session →</a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Client cards -->
+  {% if client_data %}
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    {% for cd in client_data %}
+    <a href="{% url 'trainer:client_detail' cd.member.pk %}"
+       class="bg-gray-800 rounded-xl p-5 hover:bg-gray-750 transition-colors block group">
+      <div class="flex items-start justify-between mb-3">
+        <div>
+          <p class="font-semibold text-white group-hover:text-accent transition-colors">{{ cd.member.full_name }}</p>
+          <p class="text-xs text-gray-500">{{ cd.member.email }}</p>
+        </div>
+        {% if cd.active_plan %}
+        <span class="text-xs bg-green-900/40 text-green-400 px-2 py-0.5 rounded-full">Plan Active</span>
+        {% else %}
+        <span class="text-xs bg-gray-700 text-gray-500 px-2 py-0.5 rounded-full">No Plan</span>
+        {% endif %}
+      </div>
+      <div class="grid grid-cols-3 gap-3 text-xs">
+        <div>
+          <p class="text-gray-500">Goal</p>
+          <p class="text-gray-300 mt-0.5 capitalize">{{ cd.goal }}</p>
+        </div>
+        <div>
+          <p class="text-gray-500">Last Workout</p>
+          <p class="text-gray-300 mt-0.5">
+            {% if cd.last_workout %}{{ cd.last_workout|date:"d M" }}{% else %}—{% endif %}
+          </p>
+        </div>
+        <div>
+          <p class="text-gray-500">Next Session</p>
+          <p class="text-gray-300 mt-0.5">
+            {% if cd.next_appointment %}{{ cd.next_appointment.scheduled_at|date:"D d M" }}{% else %}—{% endif %}
+          </p>
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="bg-gray-800 rounded-xl py-16 text-center">
+    <p class="text-gray-500 text-sm">No clients assigned to you yet.</p>
+    <p class="text-gray-600 text-xs mt-1">Ask your manager to assign members via ClientAssignment.</p>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kiosk Setup</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background-color: #0f172a; }
+  </style>
+</head>
+<body class="h-full flex items-center justify-center p-8">
+  <div class="w-full max-w-sm space-y-6">
+    <div class="text-center">
+      <p class="text-4xl font-black text-white mb-2">Kiosk Setup</p>
+      <p class="text-gray-400 text-sm">Enter the device token to activate this kiosk.</p>
+    </div>
+
+    {% if error %}
+    <div class="bg-red-900/50 border border-red-700 text-red-300 rounded-xl px-4 py-3 text-sm">{{ error }}</div>
+    {% endif %}
+
+    <form method="post" class="space-y-4">
+      {% csrf_token %}
+      <input type="text" name="device_token" autofocus required
+             placeholder="Device token…"
+             class="w-full bg-gray-800 border border-gray-600 rounded-xl px-4 py-4 text-base text-white font-mono placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors">
+      <button type="submit"
+              class="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-xl text-white font-bold text-base transition-colors">
+        Activate Kiosk
+      </button>
+    </form>
+
+    <p class="text-center text-xs text-gray-600">
+      Device tokens are created in the manager portal under Devices.
+    </p>
+  </div>
+</body>
+</html>

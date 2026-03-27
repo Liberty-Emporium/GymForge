@@ -1,0 +1,144 @@
+{% extends "base/member_base.html" %}
+
+{% block title %}Classes{% endblock %}
+{% block header_title %}Class Schedule{% endblock %}
+
+{% block header_actions %}
+<a href="{% url 'members:my_bookings' %}"
+   class="text-xs font-semibold px-3 py-1.5 rounded-full bg-white/15 text-white hover:bg-white/25 transition-colors">
+  My Bookings
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="px-4 pt-4 space-y-4">
+
+  <!-- Week nav -->
+  <div class="flex items-center justify-between">
+    <a href="?week={{ prev_week }}{% if selected_class_type %}&class_type={{ selected_class_type }}{% endif %}"
+       class="p-2 rounded-xl bg-gray-800 text-gray-300 hover:bg-gray-700 transition-colors">
+      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+    </a>
+    <div class="text-center">
+      <p class="text-sm font-semibold text-white">
+        {{ week_start|date:"d M" }} – {{ week_end|date:"d M Y" }}
+      </p>
+      {% if week_offset == 0 %}
+      <p class="text-xs text-accent font-medium">This Week</p>
+      {% elif week_offset == 1 %}
+      <p class="text-xs text-gray-400">Next Week</p>
+      {% else %}
+      <p class="text-xs text-gray-400">{{ week_offset }} weeks ahead</p>
+      {% endif %}
+    </div>
+    <a href="?week={{ next_week }}{% if selected_class_type %}&class_type={{ selected_class_type }}{% endif %}"
+       class="p-2 rounded-xl bg-gray-800 text-gray-300 hover:bg-gray-700 transition-colors">
+      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+      </svg>
+    </a>
+  </div>
+
+  <!-- Class type filter pills -->
+  {% if class_types %}
+  <div class="flex gap-2 overflow-x-auto pb-1 scrollbar-none -mx-4 px-4">
+    <a href="?week={{ week_offset }}"
+       class="flex-shrink-0 text-xs font-medium px-3 py-1.5 rounded-full border transition-colors
+              {% if not selected_class_type %}bg-accent border-transparent text-white{% else %}border-gray-600 text-gray-400 hover:border-gray-400{% endif %}">
+      All
+    </a>
+    {% for ct in class_types %}
+    <a href="?week={{ week_offset }}&class_type={{ ct.id }}"
+       class="flex-shrink-0 text-xs font-medium px-3 py-1.5 rounded-full border transition-colors
+              {% if selected_class_type == ct.id|stringformat:'s' %}bg-accent border-transparent text-white{% else %}border-gray-600 text-gray-400 hover:border-gray-400{% endif %}">
+      {{ ct.name }}
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Days -->
+  {% for day in days %}
+  <div>
+    <!-- Day header -->
+    <div class="flex items-center gap-3 mb-2">
+      <div class="{% if day.is_today %}bg-accent{% else %}bg-gray-700{% endif %} rounded-lg px-2.5 py-1 text-center min-w-[3rem]">
+        <p class="text-xs font-medium {% if day.is_today %}text-white{% else %}text-gray-300{% endif %}">
+          {{ day.date|date:"D" }}
+        </p>
+        <p class="text-base font-bold {% if day.is_today %}text-white{% else %}text-gray-200{% endif %} leading-none">
+          {{ day.date|date:"j" }}
+        </p>
+      </div>
+      {% if not day.sessions %}
+      <p class="text-xs text-gray-600">No classes scheduled</p>
+      {% endif %}
+    </div>
+
+    <!-- Sessions for this day -->
+    {% if day.sessions %}
+    <div class="space-y-2">
+      {% for session in day.sessions %}
+      <div class="bg-gray-800 rounded-2xl overflow-hidden">
+        <a href="{% url 'members:class_detail' session.id %}" class="block p-4">
+          <div class="flex items-start justify-between gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-semibold text-white text-sm leading-tight truncate">
+                {{ session.class_type.name }}
+              </p>
+              <div class="flex items-center gap-3 mt-1 flex-wrap">
+                <span class="text-xs text-gray-400">
+                  {{ session.start_datetime|date:"g:i A" }} – {{ session.end_datetime|date:"g:i A" }}
+                </span>
+                {% if session.trainer %}
+                <span class="text-xs text-gray-500">{{ session.trainer.get_full_name }}</span>
+                {% endif %}
+                <span class="text-xs text-gray-500">{{ session.location.name }}</span>
+              </div>
+
+              <!-- Capacity bar -->
+              <div class="mt-2 flex items-center gap-2">
+                {% with pct=session.confirmed_count|floatformat:0 %}
+                <div class="flex-1 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                  <div class="h-full rounded-full
+                    {% if session.is_full %}bg-red-500{% elif session.spots_remaining <= 3 %}bg-yellow-500{% else %}bg-green-500{% endif %}"
+                    style="width: {% widthratio session.confirmed_count session.capacity 100 %}%">
+                  </div>
+                </div>
+                {% endwith %}
+                <span class="text-xs {% if session.is_full %}text-red-400{% elif session.spots_remaining <= 3 %}text-yellow-400{% else %}text-gray-400{% endif %} whitespace-nowrap">
+                  {% if session.is_full %}
+                    Full · {{ session.waitlist_count }} waitlisted
+                  {% else %}
+                    {{ session.spots_remaining }} spot{{ session.spots_remaining|pluralize }} left
+                  {% endif %}
+                </span>
+              </div>
+            </div>
+
+            <!-- Booking button (HTMX) -->
+            <div id="book-btn-{{ session.id }}" class="flex-shrink-0">
+              {% include "member/partials/booking_button.html" with session=session booking=session.member_booking %}
+            </div>
+          </div>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+
+  <!-- Empty state -->
+  {% if not days %}
+  <div class="text-center py-16">
+    <div class="text-5xl mb-4">📅</div>
+    <p class="text-gray-400 font-medium">No classes this week</p>
+    <p class="text-gray-600 text-sm mt-1">Check back soon or try a different week</p>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

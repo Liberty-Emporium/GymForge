@@ -1,0 +1,71 @@
+<div data-location-block class="bg-gray-900 border border-gray-800 rounded-xl p-5 space-y-4">
+  <div class="flex items-center justify-between">
+    <h3 class="text-sm font-semibold text-white">
+      {% if idx == 0 %}Main Location{% else %}Location {{ idx|add:1 }}{% endif %}
+    </h3>
+    {% if idx > 0 %}
+    <button type="button" onclick="this.closest('[data-location-block]').remove()"
+            class="text-xs text-gray-500 hover:text-red-400 transition-colors">Remove</button>
+    {% endif %}
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div>
+      <label class="block text-xs text-gray-500 uppercase tracking-wide mb-1">Location Name</label>
+      <input type="text" name="location_{{ idx }}_name"
+             value="{{ location.name }}"
+             placeholder="e.g. Main Location"
+             class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand">
+    </div>
+    <div>
+      <label class="block text-xs text-gray-500 uppercase tracking-wide mb-1">Timezone</label>
+      <select name="location_{{ idx }}_timezone"
+              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand">
+        {% for tz in timezones %}
+        <option value="{{ tz }}" {% if tz == location.timezone %}selected{% endif %}>{{ tz }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+
+  <div>
+    <label class="block text-xs text-gray-500 uppercase tracking-wide mb-1">
+      Address <span class="text-red-400">*</span>
+    </label>
+    <textarea name="location_{{ idx }}_address" rows="2" required
+              placeholder="123 Main St, City, State, ZIP"
+              class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand resize-none">{{ location.address }}</textarea>
+  </div>
+
+  <!-- Opening hours -->
+  <div>
+    <p class="text-xs text-gray-500 uppercase tracking-wide mb-2">Opening Hours</p>
+    <div class="space-y-2">
+      {% for h in location.hours_list %}
+      <div class="flex items-center gap-3 text-sm">
+        <span class="w-20 text-xs text-gray-400 flex-shrink-0">{{ h.label }}</span>
+        <label class="flex items-center gap-1.5 flex-shrink-0 cursor-pointer">
+          <input type="checkbox" name="location_{{ idx }}_{{ h.day }}_closed"
+                 {% if h.closed %}checked{% endif %}
+                 class="w-3.5 h-3.5 rounded border-gray-600 bg-gray-800 text-red-500 focus:ring-0"
+                 onchange="(function(cb){
+                   var w=document.getElementById('hrs-{{ idx }}-{{ h.day }}');
+                   if(w) w.style.display=cb.checked?'none':'flex';
+                 })(this)">
+          <span class="text-xs text-gray-500">Closed</span>
+        </label>
+        <div class="flex items-center gap-2 flex-1" id="hrs-{{ idx }}-{{ h.day }}"
+             {% if h.closed %}style="display:none"{% endif %}>
+          <input type="time" name="location_{{ idx }}_{{ h.day }}_open"
+                 value="{{ h.open }}"
+                 class="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-brand">
+          <span class="text-gray-600">–</span>
+          <input type="time" name="location_{{ idx }}_{{ h.day }}_close"
+                 value="{{ h.close }}"
+                 class="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-brand">
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>

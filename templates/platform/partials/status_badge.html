@@ -1,0 +1,11 @@
+{% if status == 'active' %}
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-green-900/60 text-green-400 border border-green-700/40">Active</span>
+{% elif status == 'trial' %}
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-yellow-900/60 text-yellow-400 border border-yellow-700/40">Trial</span>
+{% elif status == 'suspended' %}
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-900/60 text-red-400 border border-red-700/40">Suspended</span>
+{% elif status == 'cancelled' %}
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-800 text-gray-400 border border-gray-700">Cancelled</span>
+{% else %}
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-800 text-gray-400 border border-gray-700">{{ status }}</span>
+{% endif %}

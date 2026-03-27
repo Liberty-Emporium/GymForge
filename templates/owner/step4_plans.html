@@ -1,0 +1,51 @@
+{% extends "owner/wizard_base.html" %}
+{% block title %}Step 4 — Membership Plans{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  <h1 class="text-2xl font-bold text-white">Set up membership plans</h1>
+  <p class="text-gray-400 mt-1">Define the tiers members can sign up for. You can add more later.</p>
+</div>
+
+<form method="post">
+  {% csrf_token %}
+
+  <div id="plans-container" class="space-y-4">
+    {% for plan in plans %}
+    {% include "owner/partials/plan_row.html" with idx=forloop.counter0 %}
+    {% endfor %}
+  </div>
+
+  <div class="mt-4">
+    <button type="button"
+            hx-get="{% url 'setup:partial_plan_row' %}?idx={{ plans|length }}"
+            hx-target="#plans-container"
+            hx-swap="beforeend"
+            class="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-dashed border-gray-600 text-sm text-gray-400 hover:text-white rounded-lg transition-colors">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+      Add another plan
+    </button>
+  </div>
+
+  <div class="flex items-center justify-between mt-8 pt-4 border-t border-gray-800">
+    <a href="{% url 'setup:step3' %}" class="text-sm text-gray-400 hover:text-white transition-colors">← Back</a>
+    <button type="submit"
+            class="px-6 py-2.5 bg-brand hover:bg-brand-dark text-white font-medium rounded-lg transition-colors">
+      Next: Services →
+    </button>
+  </div>
+</form>
+
+<script>
+document.addEventListener('htmx:afterSwap', function(e) {
+  if (e.target.id === 'plans-container') {
+    const count = e.target.querySelectorAll('[data-plan-row]').length;
+    const addBtn = document.querySelector('[hx-target="#plans-container"]');
+    if (addBtn) {
+      addBtn.setAttribute('hx-get', '{% url "setup:partial_plan_row" %}?idx=' + count);
+      htmx.process(addBtn);
+    }
+  }
+});
+</script>
+{% endblock %}

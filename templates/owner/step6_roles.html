@@ -1,0 +1,48 @@
+{% extends "owner/wizard_base.html" %}
+{% block title %}Step 6 — Staff Roles{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  <h1 class="text-2xl font-bold text-white">Which staff roles do you need?</h1>
+  <p class="text-gray-400 mt-1">Enable roles to make those portals available in your gym. You can change these later.</p>
+</div>
+
+<form method="post" class="space-y-4">
+  {% csrf_token %}
+
+  {% for role_key, role_label, role_desc in staff_roles %}
+  <div class="flex items-center justify-between p-4 bg-gray-900 border border-gray-800 rounded-xl">
+    <div class="flex-1 min-w-0 pr-4">
+      <p class="text-sm font-medium text-white">{{ role_label }}</p>
+      <p class="text-xs text-gray-500 mt-0.5">{{ role_desc }}</p>
+    </div>
+    <!-- Toggle switch -->
+    <label class="relative inline-flex items-center cursor-pointer flex-shrink-0">
+      <input type="checkbox" name="role_{{ role_key }}"
+             {% if roles|default:"" %}{% if roles.role_key %}checked{% endif %}{% endif %}
+             {% comment %}Check by role_key from roles dict{% endcomment %}
+             {% if roles %}
+               {% for k, v in roles.items %}
+                 {% if k == role_key and v %}checked{% endif %}
+               {% endfor %}
+             {% else %}
+               checked
+             {% endif %}
+             class="sr-only peer">
+      <div class="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer
+                  peer-checked:after:translate-x-full peer-checked:bg-brand
+                  after:content-[''] after:absolute after:top-[2px] after:left-[2px]
+                  after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+    </label>
+  </div>
+  {% endfor %}
+
+  <div class="flex items-center justify-between mt-8 pt-4 border-t border-gray-800">
+    <a href="{% url 'setup:step5' %}" class="text-sm text-gray-400 hover:text-white transition-colors">← Back</a>
+    <button type="submit"
+            class="px-6 py-2.5 bg-brand hover:bg-brand-dark text-white font-medium rounded-lg transition-colors">
+      Next: Preview →
+    </button>
+  </div>
+</form>
+{% endblock %}

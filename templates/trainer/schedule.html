@@ -1,0 +1,77 @@
+{% extends "base/trainer_base.html" %}
+{% block title %}My Schedule{% endblock %}
+{% block page_title %}My Schedule{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+
+  <!-- Week nav -->
+  <div class="flex items-center gap-4">
+    <a href="?week={{ prev_week }}"
+       class="px-3 py-1.5 rounded-lg border border-gray-600 text-sm text-gray-300 hover:border-gray-400 transition-colors">← Prev</a>
+    <p class="text-sm font-semibold text-white">{{ week_start|date:"d M" }} – {{ week_end|date:"d M Y" }}</p>
+    <a href="?week={{ next_week }}"
+       class="px-3 py-1.5 rounded-lg border border-gray-600 text-sm text-gray-300 hover:border-gray-400 transition-colors">Next →</a>
+    {% if week_offset != 0 %}
+    <a href="?week=0" class="text-xs text-accent hover:underline">This week</a>
+    {% endif %}
+  </div>
+
+  <!-- Appointments table -->
+  <div class="bg-gray-800 rounded-xl overflow-hidden">
+    {% if appointments %}
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-gray-700 text-xs text-gray-500 uppercase tracking-wider">
+          <th class="text-left px-5 py-3 font-medium">Date &amp; Time</th>
+          <th class="text-left px-4 py-3 font-medium">Client</th>
+          <th class="text-left px-4 py-3 font-medium">Type</th>
+          <th class="text-left px-4 py-3 font-medium">Duration</th>
+          <th class="text-left px-4 py-3 font-medium">Status</th>
+          <th class="px-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-700/50">
+        {% for appt in appointments %}
+        <tr class="hover:bg-gray-700/20 transition-colors {% if appt.status == 'completed' %}opacity-60{% endif %}">
+          <td class="px-5 py-3">
+            <p class="font-semibold text-white">{{ appt.scheduled_at|date:"D d M" }}</p>
+            <p class="text-xs text-gray-500">{{ appt.scheduled_at|date:"g:i A" }}</p>
+          </td>
+          <td class="px-4 py-3">
+            <a href="{% url 'trainer:client_detail' appt.member_id %}" class="font-medium text-white hover:text-accent transition-colors">
+              {{ appt.member.full_name }}
+            </a>
+          </td>
+          <td class="px-4 py-3 text-gray-300 text-xs">{{ appt.get_appointment_type_display }}</td>
+          <td class="px-4 py-3 text-gray-400 text-xs">{{ appt.duration_minutes }} min</td>
+          <td class="px-4 py-3">
+            <span class="text-xs capitalize px-2 py-0.5 rounded-full
+              {% if appt.status == 'completed' %}bg-green-900/40 text-green-400
+              {% elif appt.status == 'confirmed' %}bg-blue-900/40 text-blue-400
+              {% elif appt.status == 'cancelled' %}bg-red-900/40 text-red-400
+              {% else %}bg-gray-700 text-gray-400{% endif %}">
+              {{ appt.status }}
+            </span>
+          </td>
+          <td class="px-4 py-3 text-right">
+            {% if appt.status != 'completed' and appt.status != 'cancelled' %}
+            <a href="{% url 'trainer:session_log' appt.pk %}"
+               class="text-xs text-accent hover:underline">Log Session</a>
+            {% elif appt.status == 'completed' and appt.notes_after %}
+            <span class="text-xs text-gray-600" title="{{ appt.notes_after }}">Notes ✓</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="py-14 text-center">
+      <p class="text-gray-500 text-sm">No appointments this week.</p>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

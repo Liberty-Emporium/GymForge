@@ -1,0 +1,84 @@
+{% extends "base/member_base.html" %}
+{% block title %}Badges{% endblock %}
+
+{% block content %}
+<div class="space-y-5 pb-24">
+
+  <div class="flex items-center gap-3">
+    <a href="{% url 'loyalty:dashboard' %}" class="text-gray-400 hover:text-white transition-colors">
+      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+    </a>
+    <h1 class="text-xl font-bold text-white">My Badges</h1>
+  </div>
+
+  <!-- Summary -->
+  {% with earned_count=badge_rows|length %}
+  <div class="bg-gray-800 rounded-2xl px-5 py-4 flex items-center justify-between">
+    <p class="text-sm text-gray-400">Badges Earned</p>
+    <p class="text-2xl font-black text-white">
+      {% for row in badge_rows %}{% if row.earned %}{% with c=forloop.counter %}{% endwith %}{% endif %}{% endfor %}
+      {{ member.badges.count }} / {{ badge_rows|length }}
+    </p>
+  </div>
+  {% endwith %}
+
+  <!-- Badge grid -->
+  {% if badge_rows %}
+  <div class="grid grid-cols-2 gap-3">
+    {% for row in badge_rows %}
+    <div class="bg-gray-800 rounded-2xl p-4 {% if not row.earned %}opacity-50{% endif %}">
+      <!-- Icon or placeholder -->
+      <div class="flex items-center justify-center mb-3">
+        {% if row.milestone.icon %}
+        <img src="{{ row.milestone.icon.url }}" alt="{{ row.milestone.name }}"
+             class="w-16 h-16 object-contain {% if not row.earned %}grayscale{% endif %}">
+        {% else %}
+        <div class="w-16 h-16 rounded-full flex items-center justify-center text-3xl
+          {% if row.earned %}accent-btn{% else %}bg-gray-700{% endif %}">
+          {% if row.milestone.badge_type == 'points' %}⭐
+          {% elif row.milestone.badge_type == 'checkins' %}📍
+          {% elif row.milestone.badge_type == 'workouts' %}💪
+          {% elif row.milestone.badge_type == 'streak' %}🔥
+          {% elif row.milestone.badge_type == 'referrals' %}👥
+          {% else %}🏅{% endif %}
+        </div>
+        {% endif %}
+      </div>
+
+      <p class="font-bold text-white text-sm text-center">{{ row.milestone.name }}</p>
+
+      {% if row.milestone.description %}
+      <p class="text-xs text-gray-400 text-center mt-0.5">{{ row.milestone.description }}</p>
+      {% endif %}
+
+      {% if row.earned %}
+      <p class="text-xs text-green-400 text-center mt-2">
+        ✓ Earned {{ row.earned_at|date:"d M Y" }}
+      </p>
+      {% if row.milestone.points_reward %}
+      <p class="text-xs text-yellow-400 text-center">+{{ row.milestone.points_reward }} pts bonus</p>
+      {% endif %}
+      {% else %}
+      <div class="mt-2 text-center">
+        <p class="text-xs text-gray-500 capitalize">
+          {{ row.milestone.get_badge_type_display }}
+        </p>
+        <p class="text-xs text-gray-600 mt-0.5">
+          Threshold: {{ row.milestone.threshold }}
+        </p>
+        {% if row.milestone.points_reward %}
+        <p class="text-xs text-gray-600">+{{ row.milestone.points_reward }} pts on earn</p>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="bg-gray-800 rounded-2xl py-12 text-center">
+    <p class="text-gray-500 text-sm">No badges configured yet.</p>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

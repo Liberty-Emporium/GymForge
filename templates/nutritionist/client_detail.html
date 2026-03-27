@@ -1,0 +1,201 @@
+{% extends "base/nutritionist_base.html" %}
+{% block title %}{{ member.full_name }}{% endblock %}
+{% block page_title %}{{ member.full_name }}{% endblock %}
+
+{% block header_actions %}
+<a href="{% url 'nutritionist:plan_create' member.pk %}"
+   class="accent-btn px-4 py-2 rounded-lg text-sm font-semibold">+ New Plan</a>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <a href="{% url 'nutritionist:client_list' %}" class="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors">
+    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+    All Clients
+  </a>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- Left: Health / nutrition profile -->
+    <div class="space-y-5">
+      <div class="bg-gray-800 rounded-xl p-5">
+        <p class="font-semibold text-white text-sm mb-3">Nutrition Profile</p>
+        {% if health %}
+        <dl class="space-y-3 text-xs">
+          {% if health.dietary_preference %}
+          <div>
+            <dt class="text-gray-500">Dietary Preference</dt>
+            <dd class="text-gray-300 capitalize mt-0.5">{{ health.dietary_preference }}</dd>
+          </div>
+          {% endif %}
+          {% if health.food_allergies %}
+          <div>
+            <dt class="text-gray-500">Food Allergies</dt>
+            <dd class="text-red-400 mt-0.5">{{ health.food_allergies }}</dd>
+          </div>
+          {% endif %}
+          {% if health.disliked_foods %}
+          <div>
+            <dt class="text-gray-500">Disliked Foods</dt>
+            <dd class="text-gray-300 mt-0.5">{{ health.disliked_foods }}</dd>
+          </div>
+          {% endif %}
+          {% if health.water_intake_liters %}
+          <div>
+            <dt class="text-gray-500">Daily Water Intake</dt>
+            <dd class="text-gray-300 mt-0.5">{{ health.water_intake_liters }}L</dd>
+          </div>
+          {% endif %}
+          {% if health.typical_diet_description %}
+          <div>
+            <dt class="text-gray-500">Typical Diet</dt>
+            <dd class="text-gray-300 mt-0.5 leading-relaxed">{{ health.typical_diet_description }}</dd>
+          </div>
+          {% endif %}
+          {% if health.current_supplements %}
+          <div>
+            <dt class="text-gray-500">Current Supplements</dt>
+            <dd class="text-gray-300 mt-0.5">{{ health.current_supplements }}</dd>
+          </div>
+          {% endif %}
+        </dl>
+        {% else %}
+        <p class="text-xs text-gray-600">Health intake not completed.</p>
+        {% endif %}
+      </div>
+
+      <!-- Upcoming consultations -->
+      <div class="bg-gray-800 rounded-xl overflow-hidden">
+        <div class="px-5 py-3 border-b border-gray-700">
+          <p class="font-semibold text-white text-sm">Upcoming Consultations</p>
+        </div>
+        {% if upcoming_appointments %}
+        <div class="divide-y divide-gray-700/50">
+          {% for appt in upcoming_appointments %}
+          <div class="px-5 py-3 flex items-center justify-between">
+            <div>
+              <p class="text-sm text-white">{{ appt.scheduled_at|date:"D d M" }}</p>
+              <p class="text-xs text-gray-500">{{ appt.scheduled_at|date:"g:i A" }} · {{ appt.duration_minutes }}min</p>
+            </div>
+            <a href="{% url 'nutritionist:appointment_log' appt.pk %}" class="text-xs text-accent hover:underline">Log</a>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="px-5 py-6 text-xs text-gray-600 text-center">No upcoming consultations</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Right: Latest plan + supplements -->
+    <div class="lg:col-span-2 space-y-5">
+
+      <!-- Latest nutrition plan -->
+      {% if latest_plan %}
+      <div class="bg-gray-800 rounded-xl overflow-hidden">
+        <div class="flex items-center justify-between px-5 py-3 border-b border-gray-700">
+          <div class="flex items-center gap-2">
+            <p class="font-semibold text-white text-sm">Latest Nutrition Plan</p>
+            {% if latest_plan.nutritionist_reviewed %}
+            <span class="text-xs bg-green-900/40 text-green-400 px-2 py-0.5 rounded-full">Reviewed</span>
+            {% else %}
+            <span class="text-xs bg-yellow-900/40 text-yellow-400 px-2 py-0.5 rounded-full">AI Draft</span>
+            {% endif %}
+          </div>
+          <a href="{% url 'nutritionist:plan_edit' member.pk latest_plan.pk %}" class="text-xs text-accent hover:underline">Edit →</a>
+        </div>
+        <div class="p-5">
+          <!-- Macro targets -->
+          {% if latest_plan.daily_calories %}
+          <div class="grid grid-cols-4 gap-3 mb-4">
+            <div class="bg-gray-700/50 rounded-lg p-3 text-center">
+              <p class="text-lg font-bold text-white">{{ latest_plan.daily_calories }}</p>
+              <p class="text-xs text-gray-400">kcal</p>
+            </div>
+            <div class="bg-gray-700/50 rounded-lg p-3 text-center">
+              <p class="text-lg font-bold text-white">{{ latest_plan.protein_g|default:"—" }}</p>
+              <p class="text-xs text-gray-400">protein g</p>
+            </div>
+            <div class="bg-gray-700/50 rounded-lg p-3 text-center">
+              <p class="text-lg font-bold text-white">{{ latest_plan.carbs_g|default:"—" }}</p>
+              <p class="text-xs text-gray-400">carbs g</p>
+            </div>
+            <div class="bg-gray-700/50 rounded-lg p-3 text-center">
+              <p class="text-lg font-bold text-white">{{ latest_plan.fat_g|default:"—" }}</p>
+              <p class="text-xs text-gray-400">fat g</p>
+            </div>
+          </div>
+          {% endif %}
+
+          <!-- Meal plan -->
+          {% if latest_plan.meal_plan %}
+          <div class="space-y-3">
+            {% for meal_key, meal_items in latest_plan.meal_plan.items %}
+            <div>
+              <p class="text-xs font-semibold text-accent uppercase tracking-wider mb-1">{{ meal_key|capfirst }}</p>
+              {% for item in meal_items %}
+              <p class="text-xs text-gray-300 py-0.5">
+                {{ item.item|default:item }}
+                {% if item.calories %}<span class="text-gray-500">· {{ item.calories }} kcal</span>{% endif %}
+              </p>
+              {% endfor %}
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          {% if latest_plan.nutritionist_notes %}
+          <div class="mt-4 pt-4 border-t border-gray-700">
+            <p class="text-xs text-gray-500 mb-1">Nutritionist Notes</p>
+            <p class="text-sm text-gray-300 leading-relaxed">{{ latest_plan.nutritionist_notes }}</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% else %}
+      <div class="bg-gray-800 rounded-xl p-6 text-center">
+        <p class="text-gray-500 text-sm">No nutrition plan yet.</p>
+        <a href="{% url 'nutritionist:plan_create' member.pk %}"
+           class="inline-block mt-3 accent-btn px-5 py-2.5 rounded-lg text-sm font-semibold">
+          Create Plan
+        </a>
+      </div>
+      {% endif %}
+
+      <!-- Supplements -->
+      {% if supplements %}
+      <div class="bg-gray-800 rounded-xl overflow-hidden">
+        <div class="px-5 py-3 border-b border-gray-700">
+          <p class="font-semibold text-white text-sm">Supplement Recommendations</p>
+        </div>
+        <div class="divide-y divide-gray-700/50">
+          {% for supp in supplements %}
+          <div class="px-5 py-4">
+            <div class="flex items-start justify-between gap-3 mb-2">
+              <div>
+                <p class="font-semibold text-white text-sm">{{ supp.supplement_name }}</p>
+                <p class="text-xs text-gray-400">{{ supp.suggested_dosage }} · {{ supp.best_time_to_take }}</p>
+              </div>
+              <a href="{% url 'nutritionist:supplement_review' supp.pk %}"
+                 class="text-xs text-accent hover:underline flex-shrink-0">Review</a>
+            </div>
+            <p class="text-xs text-gray-500">{{ supp.reason }}</p>
+            {% if supp.professional_override %}
+            <div class="mt-2 bg-blue-900/20 border border-blue-700/30 rounded-lg px-3 py-2">
+              <p class="text-xs text-blue-300">Override: {{ supp.professional_override }}</p>
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        <div class="px-5 py-3 border-t border-gray-700 bg-gray-700/20">
+          <p class="text-xs text-gray-500 italic">⚠ {{ disclaimer }}</p>
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+{% endblock %}

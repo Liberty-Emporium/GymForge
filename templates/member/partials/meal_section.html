@@ -1,0 +1,69 @@
+{% comment %}
+Meal section partial — replaced in-place via HTMX after a meal swap.
+Rendered once per meal type (breakfast, lunch, dinner, snacks).
+
+Context:
+  meal_type  — 'breakfast' | 'lunch' | 'dinner' | 'snacks'
+  meal_label — 'Breakfast' | 'Lunch' | 'Dinner' | 'Snacks'
+  meal_icon  — emoji
+  items      — list of {name, description} dicts
+  plan       — NutritionRecommendation instance
+{% endcomment %}
+
+<div id="meal-section-{{ meal_type }}" class="bg-gray-800 rounded-2xl overflow-hidden">
+  <!-- Section header -->
+  <div class="flex items-center gap-2 px-4 pt-4 pb-2">
+    <span class="text-lg">{{ meal_icon }}</span>
+    <h3 class="text-sm font-semibold text-white">{{ meal_label }}</h3>
+    <span class="text-xs text-gray-500 ml-auto">{{ items|length }} item{{ items|length|pluralize }}</span>
+  </div>
+
+  {% if items %}
+  <div class="divide-y divide-gray-700/50">
+    {% for item in items %}
+    <div class="px-4 py-3 flex items-start gap-3">
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-medium text-gray-100">{{ item.name }}</p>
+        {% if item.description %}
+        <p class="text-xs text-gray-500 mt-0.5 leading-relaxed">{{ item.description }}</p>
+        {% endif %}
+      </div>
+      <!-- Swap button -->
+      <form hx-post="{% url 'members:swap_meal_item' plan.id %}"
+            hx-target="#meal-section-{{ meal_type }}"
+            hx-swap="outerHTML"
+            hx-indicator="#swap-spinner-{{ meal_type }}-{{ forloop.counter0 }}"
+            class="flex-shrink-0">
+        {% csrf_token %}
+        <input type="hidden" name="meal_type" value="{{ meal_type }}">
+        <input type="hidden" name="item_index" value="{{ forloop.counter0 }}">
+        <input type="hidden" name="item_name" value="{{ item.name }}">
+        <button type="submit"
+                title="Swap this item"
+                class="p-1.5 rounded-lg text-gray-500 hover:text-accent hover:bg-accent/10 transition-colors">
+          <span id="swap-spinner-{{ meal_type }}-{{ forloop.counter0 }}" class="htmx-indicator">
+            <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+            </svg>
+          </span>
+          <svg class="w-4 h-4 htmx-indicator-hide" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+          </svg>
+        </button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="px-4 pb-4 text-xs text-gray-600">No items yet — regenerate your plan.</p>
+  {% endif %}
+</div>
+
+<style>
+  /* Show spinner, hide icon when HTMX request is in-flight */
+  .htmx-request .htmx-indicator { display: inline-block; }
+  .htmx-request .htmx-indicator-hide { display: none; }
+  .htmx-indicator { display: none; }
+</style>

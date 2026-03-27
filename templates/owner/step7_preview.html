@@ -1,0 +1,164 @@
+{% extends "owner/wizard_base.html" %}
+{% block title %}Step 7 — Preview & Confirm{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+  <h1 class="text-2xl font-bold text-white">Review your gym</h1>
+  <p class="text-gray-400 mt-1">Everything looks good? Hit <strong>Launch My Gym</strong> to provision your workspace.</p>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+
+  <!-- Live preview card -->
+  <div>
+    <p class="text-xs text-gray-500 uppercase tracking-wide font-medium mb-3">Gym Preview</p>
+    <div class="rounded-2xl overflow-hidden shadow-2xl">
+      <!-- Header strip -->
+      <div class="p-8 flex flex-col gap-2"
+           style="background: {{ identity.primary_color|default:'#1a1a2e' }}">
+        {% if identity.logo_path %}
+        <img src="{{ MEDIA_URL }}{{ identity.logo_path }}" alt="Logo"
+             class="w-16 h-16 object-contain rounded-lg bg-white/10 p-1 mb-2">
+        {% else %}
+        <div class="w-16 h-16 rounded-xl flex items-center justify-center text-2xl font-bold text-white mb-2"
+             style="background: {{ identity.accent_color|default:'#e94560' }}">
+          {{ identity.gym_name|first|upper|default:'G' }}
+        </div>
+        {% endif %}
+        <h2 class="text-2xl font-bold text-white leading-tight">{{ identity.gym_name }}</h2>
+        {% if identity.tagline %}
+        <p class="text-white/70 text-sm">{{ identity.tagline }}</p>
+        {% endif %}
+        <div class="w-20 h-1 rounded-full mt-1" style="background: {{ identity.accent_color|default:'#e94560' }}"></div>
+      </div>
+      <!-- Info strip -->
+      <div class="bg-gray-900 px-6 py-4">
+        <p class="text-xs text-gray-500 mb-1">Your subdomain</p>
+        <p class="text-sm font-mono text-brand font-medium">{{ subdomain }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="space-y-4">
+
+    <!-- Identity -->
+    <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="text-sm font-semibold text-white">Identity</h3>
+        <a href="{% url 'setup:step1' %}" class="text-xs text-brand hover:text-white transition-colors">Edit</a>
+      </div>
+      <dl class="text-sm space-y-1">
+        <div class="flex justify-between">
+          <dt class="text-gray-500">Name</dt>
+          <dd class="text-gray-200">{{ identity.gym_name }}</dd>
+        </div>
+        {% if identity.tagline %}
+        <div class="flex justify-between">
+          <dt class="text-gray-500">Tagline</dt>
+          <dd class="text-gray-200">{{ identity.tagline }}</dd>
+        </div>
+        {% endif %}
+        <div class="flex justify-between items-center">
+          <dt class="text-gray-500">Colors</dt>
+          <dd class="flex items-center gap-2">
+            <span class="w-4 h-4 rounded-full border border-gray-700" style="background:{{ identity.primary_color }}"></span>
+            <span class="w-4 h-4 rounded-full border border-gray-700" style="background:{{ identity.accent_color }}"></span>
+          </dd>
+        </div>
+      </dl>
+    </div>
+
+    <!-- Location summary -->
+    <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="text-sm font-semibold text-white">{{ locations|length }} Location{{ locations|length|pluralize }}</h3>
+        <a href="{% url 'setup:step2' %}" class="text-xs text-brand hover:text-white transition-colors">Edit</a>
+      </div>
+      {% for loc in locations %}
+      <p class="text-sm text-gray-300">{{ loc.name }}</p>
+      <p class="text-xs text-gray-500">{{ loc.address }}</p>
+      {% if not forloop.last %}<div class="border-t border-gray-800 my-2"></div>{% endif %}
+      {% endfor %}
+    </div>
+
+    <!-- Owner -->
+    <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="text-sm font-semibold text-white">Owner Account</h3>
+        <a href="{% url 'setup:step3' %}" class="text-xs text-brand hover:text-white transition-colors">Edit</a>
+      </div>
+      <p class="text-sm text-gray-300">{{ owner.first_name }} {{ owner.last_name }}</p>
+      <p class="text-xs text-gray-500">{{ owner.email }}</p>
+    </div>
+
+    <!-- Plans -->
+    <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="text-sm font-semibold text-white">{{ plans|length }} Membership Plan{{ plans|length|pluralize }}</h3>
+        <a href="{% url 'setup:step4' %}" class="text-xs text-brand hover:text-white transition-colors">Edit</a>
+      </div>
+      {% for plan in plans %}
+      <div class="flex justify-between text-sm">
+        <span class="text-gray-300">{{ plan.name }}</span>
+        <span class="text-gray-500">${{ plan.price }}/{{ plan.billing_cycle }}</span>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Services + Roles -->
+    <div class="grid grid-cols-2 gap-4">
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-xs font-semibold text-white uppercase tracking-wide">Services</h3>
+          <a href="{% url 'setup:step5' %}" class="text-xs text-brand hover:text-white transition-colors">Edit</a>
+        </div>
+        <p class="text-sm text-gray-400">{{ services.selected|length }} selected</p>
+        {% if services.custom %}<p class="text-xs text-gray-500">+ {{ services.custom|length }} custom</p>{% endif %}
+      </div>
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-4">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-xs font-semibold text-white uppercase tracking-wide">Staff Roles</h3>
+          <a href="{% url 'setup:step6' %}" class="text-xs text-brand hover:text-white transition-colors">Edit</a>
+        </div>
+        {% for role_key, role_label, _ in staff_roles %}
+        {% if roles %}
+          {% for k, v in roles.items %}
+            {% if k == role_key and v %}
+            <p class="text-xs text-gray-400">{{ role_label }}</p>
+            {% endif %}
+          {% endfor %}
+        {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Trial info banner -->
+<div class="bg-brand/10 border border-brand/30 rounded-xl p-4 mb-6 flex items-start gap-3">
+  <svg class="w-5 h-5 text-brand flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+  </svg>
+  <div>
+    <p class="text-sm font-medium text-brand">14-day free trial — no credit card required</p>
+    <p class="text-xs text-gray-400 mt-0.5">
+      Your gym will be live at <span class="font-mono text-brand">{{ subdomain }}</span> within seconds.
+      Upgrade to a paid plan before your trial ends to keep all your data.
+    </p>
+  </div>
+</div>
+
+<!-- Launch button -->
+<form method="post" action="{% url 'setup:confirm' %}">
+  {% csrf_token %}
+  <div class="flex items-center justify-between">
+    <a href="{% url 'setup:step6' %}" class="text-sm text-gray-400 hover:text-white transition-colors">← Back</a>
+    <button type="submit"
+            class="px-8 py-3 bg-brand hover:bg-brand-dark text-white font-semibold text-base rounded-xl transition-colors shadow-lg shadow-brand/20">
+      🚀 Launch My Gym
+    </button>
+  </div>
+</form>
+{% endblock %}

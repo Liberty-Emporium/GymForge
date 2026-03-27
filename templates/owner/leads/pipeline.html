@@ -1,0 +1,161 @@
+{% extends "base/owner_base.html" %}
+{% block title %}Leads Pipeline{% endblock %}
+{% block page_title %}Leads Pipeline{% endblock %}
+
+{% block header_actions %}
+<div class="flex items-center gap-3">
+  <a href="{% url 'leads:export_csv' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}"
+     class="px-3 py-2 text-xs font-medium text-gray-400 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors flex items-center gap-1.5">
+    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+    </svg>
+    Export CSV
+  </a>
+  <span class="text-xs text-gray-500">{{ total }} lead{{ total|pluralize }}</span>
+</div>
+{% endblock %}
+
+{% block content %}
+
+<!-- Filters bar -->
+<form method="get" class="mb-6 bg-gray-900 border border-gray-800 rounded-xl px-4 py-3">
+  <div class="flex flex-wrap items-end gap-3">
+
+    <!-- Search -->
+    <div class="flex-1 min-w-[180px]">
+      <label class="block text-xs text-gray-500 mb-1">Search</label>
+      <input type="text" name="q" value="{{ filters.q|default:'' }}"
+             placeholder="Name, email, phone…"
+             class="w-full rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 text-white text-sm focus:outline-none focus:ring-1"
+             style="--tw-ring-color: var(--accent)">
+    </div>
+
+    <!-- Status -->
+    <div>
+      <label class="block text-xs text-gray-500 mb-1">Status</label>
+      <select name="status"
+              class="rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 text-white text-sm focus:outline-none">
+        <option value="">All statuses</option>
+        {% for code, label in statuses %}
+        <option value="{{ code }}" {% if filters.status == code %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Source -->
+    <div>
+      <label class="block text-xs text-gray-500 mb-1">Source</label>
+      <select name="source"
+              class="rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 text-white text-sm focus:outline-none">
+        <option value="">All sources</option>
+        {% for code, label in sources %}
+        <option value="{{ code }}" {% if filters.source == code %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Assigned -->
+    <div>
+      <label class="block text-xs text-gray-500 mb-1">Assigned to</label>
+      <select name="assigned"
+              class="rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 text-white text-sm focus:outline-none">
+        <option value="">Anyone</option>
+        {% for member in staff %}
+        <option value="{{ member.pk }}" {% if filters.assigned == member.pk|stringformat:"s" %}selected{% endif %}>
+          {{ member.get_full_name|default:member.username }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <!-- Location -->
+    {% if locations %}
+    <div>
+      <label class="block text-xs text-gray-500 mb-1">Location</label>
+      <select name="location"
+              class="rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 text-white text-sm focus:outline-none">
+        <option value="">All locations</option>
+        {% for loc in locations %}
+        <option value="{{ loc.pk }}" {% if filters.location == loc.pk|stringformat:"s" %}selected{% endif %}>
+          {{ loc.name }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    {% endif %}
+
+    <!-- Date range -->
+    <div>
+      <label class="block text-xs text-gray-500 mb-1">From</label>
+      <input type="date" name="date_from" value="{{ filters.date_from|default:'' }}"
+             class="rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 text-white text-sm focus:outline-none">
+    </div>
+    <div>
+      <label class="block text-xs text-gray-500 mb-1">To</label>
+      <input type="date" name="date_to" value="{{ filters.date_to|default:'' }}"
+             class="rounded-lg bg-gray-800 border border-gray-700 px-3 py-2 text-white text-sm focus:outline-none">
+    </div>
+
+    <div class="flex gap-2">
+      <button type="submit"
+              class="px-4 py-2 rounded-lg text-sm font-medium text-white accent-btn">
+        Filter
+      </button>
+      <a href="{% url 'leads:pipeline' %}"
+         class="px-4 py-2 rounded-lg text-sm font-medium text-gray-400 bg-gray-800 hover:bg-gray-700 transition-colors">
+        Clear
+      </a>
+    </div>
+  </div>
+</form>
+
+<!-- Kanban board -->
+<div class="flex gap-4 overflow-x-auto pb-4" style="min-height: 600px;">
+
+  {% for col in columns %}
+  <div class="flex-shrink-0 w-72 flex flex-col">
+
+    <!-- Column header -->
+    <div class="flex items-center justify-between px-3 py-2.5 rounded-t-xl mb-2"
+         style="background-color: {{ col.accent }}20; border-left: 3px solid {{ col.accent }}">
+      <div class="flex items-center gap-2">
+        <span class="text-sm font-semibold text-white">{{ col.label }}</span>
+        <span class="px-2 py-0.5 rounded-full text-xs font-bold text-white"
+              style="background-color: {{ col.accent }}">
+          {{ col.count }}
+        </span>
+      </div>
+      {% if col.code == 'new' %}
+      <button type="button"
+              onclick="document.getElementById('quick-add-panel').classList.toggle('hidden')"
+              class="text-xs text-gray-400 hover:text-white transition-colors" title="Add lead">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+        </svg>
+      </button>
+      {% endif %}
+    </div>
+
+    <!-- Quick-add form (New column only) -->
+    {% if col.code == 'new' %}
+    <div id="quick-add-panel" class="hidden mb-2">
+      <div id="quick-add-form-wrap" class="bg-gray-900 border border-gray-800 rounded-xl p-3">
+        {% include "owner/leads/partials/quick_add_form.html" %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Lead cards -->
+    <div id="{{ col.code }}-col-cards" class="flex-1 space-y-2 overflow-y-auto">
+      {% for lead in col.leads %}
+      {% include "owner/leads/partials/lead_card.html" with accent=col.accent %}
+      {% empty %}
+      <div class="text-center text-xs text-gray-600 py-6">No leads</div>
+      {% endfor %}
+    </div>
+
+  </div>
+  {% endfor %}
+
+</div>
+{% endblock %}

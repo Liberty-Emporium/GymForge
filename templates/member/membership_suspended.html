@@ -1,0 +1,56 @@
+{% extends "base/member_base.html" %}
+
+{% block title %}Account on Hold{% endblock %}
+{% block header_title %}Account Status{% endblock %}
+
+{% block content %}
+<div class="flex flex-col items-center justify-center min-h-[70vh] px-6 text-center">
+
+  {% if membership.status == 'overdue' %}
+    <div class="text-5xl mb-5">💳</div>
+    <h1 class="text-xl font-bold text-white mb-2">Payment Overdue</h1>
+    <p class="text-gray-400 text-sm max-w-xs leading-relaxed mb-6">
+      Your last payment didn't go through. Please update your payment method to restore full access.
+    </p>
+    <a href="/billing/update-payment/" class="btn-accent px-6 py-3 rounded-xl font-semibold text-sm">
+      Update Payment Method
+    </a>
+
+  {% elif membership.status == 'suspended' %}
+    <div class="text-5xl mb-5">🔒</div>
+    <h1 class="text-xl font-bold text-white mb-2">Account Suspended</h1>
+    <p class="text-gray-400 text-sm max-w-xs leading-relaxed mb-6">
+      Your account has been suspended. Please contact the gym to resolve this.
+    </p>
+    <a href="/billing/subscribe/" class="btn-accent px-6 py-3 rounded-xl font-semibold text-sm">
+      View Billing Options
+    </a>
+
+  {% elif membership.status == 'cancelled' %}
+    <div class="text-5xl mb-5">📋</div>
+    <h1 class="text-xl font-bold text-white mb-2">Membership Cancelled</h1>
+    <p class="text-gray-400 text-sm max-w-xs leading-relaxed mb-6">
+      Your membership has been cancelled. Re-join anytime to get back to your fitness journey.
+    </p>
+    <a href="/app/register/plans/" class="btn-accent px-6 py-3 rounded-xl font-semibold text-sm">
+      Re-join Now
+    </a>
+
+  {% else %}
+    <div class="text-5xl mb-5">⚠️</div>
+    <h1 class="text-xl font-bold text-white mb-2">Access Restricted</h1>
+    <p class="text-gray-400 text-sm max-w-xs mb-6">
+      There is an issue with your membership. Please contact the gym for assistance.
+    </p>
+  {% endif %}
+
+  <div class="mt-6 section-card rounded-2xl p-4 w-full max-w-xs text-left" style="background:rgba(255,255,255,.05)">
+    <p class="text-xs text-gray-500 mb-1">Current plan</p>
+    <p class="text-sm font-semibold text-white">{{ membership.tier.name }}</p>
+    <p class="text-xs text-gray-400 mt-0.5">Status: {{ membership.get_status_display }}</p>
+  </div>
+
+  <a href="{% url 'logout' %}" class="mt-6 text-gray-500 text-xs underline hover:text-gray-400">Sign out</a>
+
+</div>
+{% endblock %}

@@ -1,0 +1,17 @@
+{% load tz %}
+{# Appended by HTMX into #new-messages after each send #}
+
+{# Hidden sentinel so JS can detect show_finish #}
+{% if show_finish %}<span data-show-finish="true" class="hidden"></span>{% endif %}
+
+<!-- User message -->
+<div class="flex justify-end">
+  <div class="bubble-user max-w-xs px-4 py-2 text-sm">{{ user_message }}</div>
+</div>
+
+<!-- AI reply -->
+<div class="flex gap-2 items-end">
+  <div class="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs flex-shrink-0"
+       style="background:var(--primary)">AI</div>
+  <div class="bubble-ai max-w-xs px-4 py-2 text-sm text-gray-800">{{ reply }}</div>
+</div>

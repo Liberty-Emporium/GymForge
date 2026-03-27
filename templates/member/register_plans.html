@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Choose Your Plan — {{ profile.gym_name|default:"Your Gym" }}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root { --primary: {{ primary_color|default:"#1a1a2e" }}; --accent: {{ accent_color|default:"#e94560" }}; }
+    .btn-accent { background-color: var(--accent); color: #fff; }
+    .btn-accent:hover { opacity: .88; }
+    .tier-card { border: 2px solid transparent; transition: border-color .15s, box-shadow .15s; cursor: pointer; }
+    .tier-card.selected { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent); }
+    input[type="radio"] { accent-color: var(--accent); }
+  </style>
+</head>
+<body class="min-h-screen bg-gray-50 flex flex-col items-center py-10 px-4">
+
+  <!-- Logo -->
+  <div class="mb-6 text-center">
+    {% if profile and profile.logo %}
+      <img src="{{ profile.logo.url }}" alt="{{ profile.gym_name }}" class="h-12 mx-auto mb-2">
+    {% else %}
+      <h1 class="text-2xl font-bold" style="color:var(--primary)">{{ profile.gym_name|default:"Your Gym" }}</h1>
+    {% endif %}
+  </div>
+
+  <!-- Step indicator -->
+  <div class="flex items-center gap-1 mb-8">
+    <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-white text-sm" style="background:var(--primary)">✓</div>
+    <div class="w-8 h-px bg-gray-300"></div>
+    <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-white text-sm" style="background:var(--primary)">✓</div>
+    <div class="w-8 h-px bg-gray-300"></div>
+    <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-white text-sm" style="background:var(--accent)">3</div>
+    <div class="w-8 h-px bg-gray-300"></div>
+    <div class="w-8 h-8 rounded-full bg-gray-200 text-gray-400 flex items-center justify-center font-bold text-sm">4</div>
+    <div class="w-8 h-px bg-gray-300"></div>
+    <div class="w-8 h-8 rounded-full bg-gray-200 text-gray-400 flex items-center justify-center font-bold text-sm">5</div>
+  </div>
+
+  <div class="w-full max-w-2xl bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+    <h2 class="text-xl font-bold text-gray-900 mb-1">Choose your membership</h2>
+    <p class="text-sm text-gray-500 mb-6">Step 3 of 5 — Select the plan that works for you</p>
+
+    {% if errors.tier %}
+      <div class="bg-red-50 border border-red-200 rounded-lg px-4 py-2 mb-4 text-red-700 text-sm">{{ errors.tier }}</div>
+    {% endif %}
+
+    <form method="post" action="{% url 'members:register_plans' %}">
+      {% csrf_token %}
+
+      {% if tiers %}
+        <div class="grid gap-4 mb-6">
+          {% for tier in tiers %}
+            <label class="tier-card bg-white rounded-xl p-5 flex items-start gap-4"
+                   onclick="selectTier(this, '{{ tier.pk }}')">
+              <input type="radio" name="tier_id" value="{{ tier.pk }}" class="mt-1 hidden" id="tier_{{ tier.pk }}">
+              <div class="w-5 h-5 rounded-full border-2 border-gray-300 flex-shrink-0 mt-0.5 radio-dot" style="margin-top:4px"></div>
+              <div class="flex-1">
+                <div class="flex items-center justify-between">
+                  <span class="font-bold text-gray-900">{{ tier.name }}</span>
+                  <span class="text-lg font-bold" style="color:var(--accent)">
+                    {% if tier.billing_cycle == 'free' %}Free
+                    {% else %}${{ tier.price }}<span class="text-sm font-normal text-gray-400">/{{ tier.get_billing_cycle_display|lower }}</span>
+                    {% endif %}
+                  </span>
+                </div>
+                {% if tier.description %}
+                  <p class="text-sm text-gray-500 mt-1">{{ tier.description }}</p>
+                {% endif %}
+                {% if tier.trial_days > 0 %}
+                  <span class="inline-block mt-2 text-xs px-2 py-0.5 rounded-full font-medium text-white" style="background:var(--primary)">
+                    {{ tier.trial_days }}-day free trial
+                  </span>
+                {% endif %}
+                {% if tier.included_services.exists %}
+                  <div class="flex flex-wrap gap-1 mt-2">
+                    {% for svc in tier.included_services.all %}
+                      <span class="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full">{{ svc.name }}</span>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              </div>
+            </label>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="text-center py-12 text-gray-400">
+          <p class="text-2xl mb-2">🏋️</p>
+          <p class="text-sm">No membership plans are available yet. Please contact the gym.</p>
+        </div>
+      {% endif %}
+
+      <button type="submit" id="continueBtn"
+              class="btn-accent w-full py-3 rounded-xl font-semibold text-sm transition {% if not tiers %}opacity-40 cursor-not-allowed{% endif %}"
+              {% if not tiers %}disabled{% endif %}>
+        Continue →
+      </button>
+    </form>
+  </div>
+
+  <script>
+    function selectTier(label, pk) {
+      document.querySelectorAll('.tier-card').forEach(c => {
+        c.classList.remove('selected');
+        c.querySelector('.radio-dot').style.background = '';
+        c.querySelector('.radio-dot').style.borderColor = '';
+      });
+      label.classList.add('selected');
+      const dot = label.querySelector('.radio-dot');
+      dot.style.background = 'var(--accent)';
+      dot.style.borderColor = 'var(--accent)';
+      label.querySelector('input[type="radio"]').checked = true;
+    }
+  </script>
+</body>
+</html>

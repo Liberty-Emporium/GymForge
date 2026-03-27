@@ -1,0 +1,37 @@
+{% load humanize %}
+<div class="p-4">
+  <!-- Author + meta -->
+  <div class="flex items-center justify-between mb-3">
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-8 rounded-full accent-btn flex items-center justify-center text-xs font-bold flex-shrink-0">
+        {{ post.author.first_name|first|upper|default:post.author.email|first|upper }}
+      </div>
+      <div>
+        <p class="text-sm font-semibold text-white">{{ post.author.get_full_name|default:post.author.email }}</p>
+        <p class="text-xs text-gray-500">{{ post.created_at|naturaltime }}
+          {% if post.post_type != 'general' %}
+          · <span class="capitalize">{{ post.get_post_type_display }}</span>
+          {% endif %}
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <p class="text-sm text-gray-200 leading-relaxed whitespace-pre-line mb-3">{{ post.content }}</p>
+
+  <!-- Image -->
+  {% if post.image %}
+  <img src="{{ post.image.url }}" alt="Post image"
+       class="w-full rounded-xl object-cover max-h-72 mb-3">
+  {% endif %}
+
+  <!-- Reactions -->
+  <div id="react-btn-{{ post.pk }}">
+    {% if post.pk in my_reactions %}
+      {% include "member/partials/react_button.html" with reacted=True count=post.reaction_count %}
+    {% else %}
+      {% include "member/partials/react_button.html" with reacted=False count=post.reaction_count %}
+    {% endif %}
+  </div>
+</div>

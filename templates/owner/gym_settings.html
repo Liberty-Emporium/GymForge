@@ -1,0 +1,94 @@
+{% extends "base/owner_base.html" %}
+{% block title %}Gym Settings{% endblock %}
+{% block page_title %}Gym Settings{% endblock %}
+
+{% block content %}
+
+{% if saved %}
+<div class="mb-6 flex items-center gap-3 bg-emerald-900/30 border border-emerald-700/40 rounded-xl px-4 py-3">
+  <svg class="w-4 h-4 text-emerald-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+  </svg>
+  <p class="text-sm text-emerald-300">Settings saved successfully.</p>
+</div>
+{% endif %}
+
+{% if not profile %}
+<div class="bg-gray-900 border border-gray-800 rounded-2xl p-8 text-center">
+  <p class="text-gray-400 text-sm">Gym profile not found. Complete the setup wizard first.</p>
+</div>
+{% else %}
+
+<form method="post" class="max-w-2xl space-y-6">
+  {% csrf_token %}
+
+  <!-- Feature Toggles -->
+  <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-4">
+    <div class="border-b border-gray-800 pb-3">
+      <h2 class="text-sm font-semibold text-white">Feature Toggles</h2>
+      <p class="text-xs text-gray-500 mt-0.5">Enable or disable features for your members.</p>
+    </div>
+    {% for key, label in feature_keys %}
+    <label class="flex items-center justify-between cursor-pointer group">
+      <span class="text-sm text-gray-300 group-hover:text-white transition-colors">{{ label }}</span>
+      <div class="relative">
+        <input type="checkbox" name="feature_{{ key }}" value="on"
+               class="sr-only peer"
+               id="feature_{{ key }}"
+               {% if profile.features_enabled|default:{} %}
+                 {% for fkey, fval in profile.features_enabled.items %}
+                   {% if fkey == key and fval %}checked{% endif %}
+                 {% endfor %}
+               {% endif %}>
+        <div class="w-10 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:bg-[var(--accent)] transition-colors"></div>
+        <div class="absolute top-0.5 left-0.5 bg-white w-5 h-5 rounded-full transition-transform peer-checked:translate-x-4 pointer-events-none"></div>
+      </div>
+    </label>
+    {% endfor %}
+  </div>
+
+  <!-- Welcome Message -->
+  <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-4">
+    <div class="border-b border-gray-800 pb-3">
+      <h2 class="text-sm font-semibold text-white">Welcome Message</h2>
+      <p class="text-xs text-gray-500 mt-0.5">Shown to new members after sign-up.</p>
+    </div>
+    <textarea name="welcome_message" rows="4"
+              placeholder="Welcome to the family! We're thrilled to have you…"
+              class="w-full rounded-lg bg-gray-800 border border-gray-700 px-4 py-2.5 text-white text-sm focus:outline-none focus:ring-2 resize-none"
+              style="--tw-ring-color: var(--accent)">{{ profile.welcome_message|default:'' }}</textarea>
+  </div>
+
+  <!-- Waiver Text -->
+  <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-4">
+    <div class="border-b border-gray-800 pb-3">
+      <h2 class="text-sm font-semibold text-white">Liability Waiver</h2>
+      <p class="text-xs text-gray-500 mt-0.5">Members must accept this before joining.</p>
+    </div>
+    <textarea name="waiver_text" rows="8"
+              placeholder="By signing up you agree to…"
+              class="w-full rounded-lg bg-gray-800 border border-gray-700 px-4 py-2.5 text-white text-sm focus:outline-none focus:ring-2 resize-none font-mono"
+              style="--tw-ring-color: var(--accent)">{{ profile.waiver_text|default:'' }}</textarea>
+  </div>
+
+  <!-- Email Signature -->
+  <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-4">
+    <div class="border-b border-gray-800 pb-3">
+      <h2 class="text-sm font-semibold text-white">Email Signature</h2>
+      <p class="text-xs text-gray-500 mt-0.5">Appended to all outgoing member emails.</p>
+    </div>
+    <textarea name="email_signature" rows="4"
+              placeholder="— The Team at {{ gym_name }}"
+              class="w-full rounded-lg bg-gray-800 border border-gray-700 px-4 py-2.5 text-white text-sm focus:outline-none focus:ring-2 resize-none"
+              style="--tw-ring-color: var(--accent)">{{ profile.email_signature|default:'' }}</textarea>
+  </div>
+
+  <div class="flex items-center gap-4 pb-6">
+    <button type="submit"
+            class="px-6 py-2.5 rounded-lg text-sm font-semibold text-white accent-btn transition-opacity hover:opacity-90">
+      Save Settings
+    </button>
+  </div>
+</form>
+{% endif %}
+{% endblock %}

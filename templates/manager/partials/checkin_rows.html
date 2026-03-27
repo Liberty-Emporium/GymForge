@@ -1,0 +1,63 @@
+{% comment %}HTMX partial — replaces #checkin-feed content on 30s refresh.{% endcomment %}
+
+<div class="bg-gray-800 rounded-xl overflow-hidden">
+  {% if page.object_list %}
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="border-b border-gray-700 text-xs text-gray-500 uppercase tracking-wider">
+        <th class="text-left px-5 py-3 font-medium">Member</th>
+        <th class="text-left px-4 py-3 font-medium">Method</th>
+        <th class="text-left px-4 py-3 font-medium">Time In</th>
+        <th class="text-left px-4 py-3 font-medium">Time Out</th>
+        <th class="text-right px-4 py-3 font-medium">Duration</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-700/50">
+      {% for ci in page %}
+      <tr class="hover:bg-gray-700/20 transition-colors">
+        <td class="px-5 py-3">
+          <p class="font-semibold text-white">{{ ci.member.full_name }}</p>
+          <p class="text-xs text-gray-500">{{ ci.member.email }}</p>
+        </td>
+        <td class="px-4 py-3">
+          <span class="text-xs font-medium bg-gray-700 text-gray-300 px-2 py-0.5 rounded capitalize">
+            {{ ci.method }}
+          </span>
+        </td>
+        <td class="px-4 py-3 text-gray-300 text-xs font-mono">{{ ci.checked_in_at|date:"H:i:s" }}</td>
+        <td class="px-4 py-3 text-xs">
+          {% if ci.checked_out_at %}
+          <span class="text-green-400 font-mono">{{ ci.checked_out_at|date:"H:i:s" }}</span>
+          {% else %}
+          <span class="text-accent font-medium">Still in gym</span>
+          {% endif %}
+        </td>
+        <td class="px-4 py-3 text-right text-xs text-gray-400">
+          {% if ci.duration_minutes %}{{ ci.duration_minutes }} min{% else %}—{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Pagination -->
+  {% if page.paginator.num_pages > 1 %}
+  <div class="px-5 py-3 border-t border-gray-700 flex items-center justify-between text-sm">
+    <p class="text-gray-500">Page {{ page.number }} of {{ page.paginator.num_pages }}</p>
+    <div class="flex gap-2">
+      {% if page.has_previous %}
+      <a href="?page={{ page.previous_page_number }}"
+         class="px-3 py-1.5 rounded-lg border border-gray-600 text-gray-300 hover:border-gray-400 transition-colors text-xs">← Prev</a>
+      {% endif %}
+      {% if page.has_next %}
+      <a href="?page={{ page.next_page_number }}"
+         class="px-3 py-1.5 rounded-lg border border-gray-600 text-gray-300 hover:border-gray-400 transition-colors text-xs">Next →</a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% else %}
+  <p class="px-5 py-10 text-sm text-gray-600 text-center">No check-ins today yet</p>
+  {% endif %}
+</div>

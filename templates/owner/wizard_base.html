@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-950">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Set Up Your Gym{% endblock %} — GymForge</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: { brand: { DEFAULT: '#6366f1', dark: '#4f46e5' } }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="min-h-full bg-gray-950 font-sans antialiased text-gray-100">
+
+  <!-- Top bar -->
+  <header class="bg-gray-900 border-b border-gray-800 px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg bg-brand flex items-center justify-center font-bold text-white text-sm">GF</div>
+      <span class="font-semibold text-white">GymForge</span>
+    </div>
+    <span class="text-sm text-gray-400">Step {{ step }} of 7</span>
+  </header>
+
+  <!-- Step progress -->
+  {% with step_data="1,Gym Identity|2,Location|3,Your Account|4,Plans|5,Services|6,Staff|7,Preview" %}
+  <div class="bg-gray-900 border-b border-gray-800 px-6 py-4">
+    <div class="max-w-3xl mx-auto flex items-center gap-0">
+      {% for item in "1234567" %}
+      {% with n=forloop.counter %}
+      <div class="flex items-center {% if not forloop.last %}flex-1{% endif %}">
+        <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold border-2 flex-shrink-0
+                    {% if n < step %}bg-brand border-brand text-white
+                    {% elif n == step %}border-brand text-brand
+                    {% else %}border-gray-700 text-gray-500{% endif %}">
+          {% if n < step %}✓{% else %}{{ n }}{% endif %}
+        </div>
+        {% if not forloop.last %}
+        <div class="flex-1 h-0.5 mx-1 {% if n < step %}bg-brand{% else %}bg-gray-800{% endif %}"></div>
+        {% endif %}
+      </div>
+      {% endwith %}
+      {% endfor %}
+    </div>
+  </div>
+  {% endwith %}
+
+  <!-- Content -->
+  <main class="max-w-3xl mx-auto px-4 py-8">
+    {% if messages %}
+    <div class="mb-6 space-y-2">
+      {% for msg in messages %}
+      <div class="px-4 py-3 rounded-lg text-sm
+                  {% if msg.tags == 'error' %}bg-red-900/50 border border-red-700 text-red-300
+                  {% else %}bg-green-900/50 border border-green-700 text-green-300{% endif %}">
+        {{ msg }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+</body>
+</html>

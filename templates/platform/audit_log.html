@@ -1,0 +1,70 @@
+{% extends "platform/base.html" %}
+{% block title %}Audit Log{% endblock %}
+{% block page_title %}Audit Log{% endblock %}
+
+{% block content %}
+<!-- Filters -->
+<div class="bg-gray-900 border border-gray-800 rounded-xl p-4 mb-6">
+  <form method="get" class="flex flex-wrap gap-3 items-center">
+    <input type="text" name="actor" value="{{ actor_filter }}"
+           placeholder="Filter by actor email…"
+           class="flex-1 min-w-48 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand">
+    <input type="text" name="gym" value="{{ gym_filter }}"
+           placeholder="Filter by gym schema…"
+           class="flex-1 min-w-48 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand">
+    <button type="submit"
+            class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-sm text-white rounded-lg transition-colors">
+      Filter
+    </button>
+    {% if actor_filter or gym_filter %}
+    <a href="{% url 'platform_admin:audit_log' %}"
+       class="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors">Clear</a>
+    {% endif %}
+  </form>
+</div>
+
+<!-- Log table -->
+<div class="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="border-b border-gray-800 text-xs text-gray-400 uppercase tracking-wide">
+        <th class="px-4 py-3 text-left">Time</th>
+        <th class="px-4 py-3 text-left">Actor</th>
+        <th class="px-4 py-3 text-left">Action</th>
+        <th class="px-4 py-3 text-left">Gym</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-800">
+      {% for log in page_obj %}
+      <tr class="hover:bg-gray-800/40 transition-colors">
+        <td class="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">{{ log.timestamp|date:"M j, Y H:i" }}</td>
+        <td class="px-4 py-3 text-sm text-gray-300">{{ log.actor_email }}</td>
+        <td class="px-4 py-3 text-sm text-white">{{ log.action }}</td>
+        <td class="px-4 py-3 text-xs text-gray-500 font-mono">{{ log.gym_schema|default:"—" }}</td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="4" class="px-4 py-10 text-center text-gray-500 text-sm">No audit events found.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Pagination -->
+  {% if page_obj.has_other_pages %}
+  <div class="px-4 py-3 border-t border-gray-800 flex items-center justify-between text-sm">
+    <p class="text-gray-400">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</p>
+    <div class="flex gap-2">
+      {% if page_obj.has_previous %}
+      <a href="?page={{ page_obj.previous_page_number }}&actor={{ actor_filter }}&gym={{ gym_filter }}"
+         class="px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded text-gray-300 transition-colors">← Prev</a>
+      {% endif %}
+      {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}&actor={{ actor_filter }}&gym={{ gym_filter }}"
+         class="px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded text-gray-300 transition-colors">Next →</a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

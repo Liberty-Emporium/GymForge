@@ -1,0 +1,106 @@
+{% extends "base/owner_base.html" %}
+{% block title %}{% if rate_obj %}Edit Pay Rate{% else %}New Pay Rate{% endif %}{% endblock %}
+{% block page_title %}{% if rate_obj %}Edit Pay Rate{% else %}New Pay Rate{% endif %}{% endblock %}
+
+{% block header_actions %}
+<a href="{% url 'payroll:rate_list' %}" class="px-4 py-2 rounded-lg text-sm font-semibold bg-gray-700 text-gray-300 hover:bg-gray-600 transition-colors">← Back to Rates</a>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+
+  {% if messages %}
+  <div class="space-y-2">
+    {% for message in messages %}
+    <div class="bg-red-900/20 border border-red-700/30 rounded-xl px-4 py-3">
+      <p class="text-sm text-red-400">{{ message }}</p>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if not rate_obj %}
+  <div class="bg-yellow-900/20 border border-yellow-700/30 rounded-xl px-4 py-3">
+    <p class="text-sm text-yellow-400">Creating a new rate for an existing active staff + pay type combination will automatically deactivate the previous rate.</p>
+  </div>
+  {% endif %}
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="bg-gray-800 rounded-xl p-6 space-y-5">
+
+      <!-- Staff (only on create) -->
+      {% if not rate_obj %}
+      <div>
+        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Staff Member *</label>
+        <select name="staff" required
+                class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent text-sm">
+          <option value="">Select staff member…</option>
+          {% for user in staff_users %}
+          <option value="{{ user.pk }}">{{ user.get_full_name }} ({{ user.role|capfirst }})</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Pay Type (only on create) -->
+      <div>
+        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Pay Type *</label>
+        <select name="pay_type" required
+                class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent text-sm">
+          <option value="">Select pay type…</option>
+          {% for value, label in pay_type_choices %}
+          <option value="{{ value }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% else %}
+      <!-- Read-only info on edit -->
+      <div class="grid grid-cols-2 gap-5">
+        <div>
+          <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Staff Member</p>
+          <p class="text-white text-sm">{{ rate_obj.staff.get_full_name }}</p>
+        </div>
+        <div>
+          <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Pay Type</p>
+          <p class="text-white text-sm">{{ rate_obj.get_pay_type_display }}</p>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Rate -->
+      <div>
+        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
+          Rate ($) *
+          <span class="text-gray-500 normal-case font-normal ml-1">hourly rate / monthly salary / per-class fee</span>
+        </label>
+        <input type="number" name="rate" required step="0.01" min="0"
+               value="{{ rate_obj.rate|default:'' }}"
+               class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-accent text-sm"
+               placeholder="0.00">
+      </div>
+
+      <!-- Effective From -->
+      <div>
+        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Effective From *</label>
+        <input type="date" name="effective_from" required
+               value="{{ rate_obj.effective_from|date:'Y-m-d'|default:'' }}"
+               class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-accent text-sm">
+      </div>
+
+      <!-- Notes -->
+      <div>
+        <label class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Notes</label>
+        <textarea name="notes" rows="2"
+                  class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-accent text-sm resize-none"
+                  placeholder="Optional notes">{{ rate_obj.notes|default:'' }}</textarea>
+      </div>
+
+      <div class="pt-2">
+        <button type="submit" class="accent-btn px-6 py-3 rounded-xl text-sm font-semibold">Save Rate</button>
+      </div>
+
+    </div>
+  </form>
+
+</div>
+{% endblock %}

@@ -1,0 +1,93 @@
+{% extends "base/front_desk_base.html" %}
+
+{% block title %}Door Devices{% endblock %}
+{% block page_title %}Door Devices{% endblock %}
+
+{% block header_actions %}
+<a href="{% url 'front_desk:device_register' %}"
+   class="accent-btn px-4 py-2 rounded-lg text-sm font-semibold">
+  + Register Device
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-4">
+
+  {% if devices %}
+  <div class="bg-gray-800 rounded-xl overflow-hidden">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-gray-700 text-xs text-gray-500 uppercase tracking-wider">
+          <th class="text-left px-5 py-3 font-medium">Device</th>
+          <th class="text-left px-4 py-3 font-medium">Type</th>
+          <th class="text-left px-4 py-3 font-medium">Location</th>
+          <th class="text-left px-4 py-3 font-medium">Status</th>
+          <th class="text-left px-4 py-3 font-medium">Last Seen</th>
+          <th class="px-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-700/50">
+        {% for device in devices %}
+        <tr class="hover:bg-gray-700/30 transition-colors {% if not device.is_active %}opacity-50{% endif %}">
+          <td class="px-5 py-3">
+            <p class="font-semibold text-white">{{ device.name }}</p>
+            {% if device.ip_address %}
+            <p class="text-xs text-gray-500 mt-0.5 font-mono">{{ device.ip_address }}</p>
+            {% endif %}
+          </td>
+          <td class="px-4 py-3">
+            <span class="text-xs font-medium bg-gray-700 text-gray-300 px-2 py-1 rounded-lg">
+              {{ device.get_device_type_display }}
+            </span>
+          </td>
+          <td class="px-4 py-3 text-gray-300">{{ device.location.name }}</td>
+          <td class="px-4 py-3">
+            {% if device.is_active %}
+            <span class="flex items-center gap-1.5 text-green-400 text-xs font-medium">
+              <span class="w-2 h-2 rounded-full bg-green-400 inline-block"></span>
+              Active
+            </span>
+            {% else %}
+            <span class="flex items-center gap-1.5 text-red-400 text-xs font-medium">
+              <span class="w-2 h-2 rounded-full bg-red-400 inline-block"></span>
+              Inactive
+            </span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-3 text-gray-400 text-xs">
+            {% if device.last_seen %}
+            {{ device.last_seen|date:"d M Y H:i" }}
+            {% else %}
+            <span class="text-gray-600">Never</span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-3 text-right">
+            {% if device.is_active %}
+            <form method="post" action="{% url 'front_desk:device_deactivate' device.id %}"
+                  onsubmit="return confirm('Deactivate {{ device.name }}? Door access will stop immediately.')">
+              {% csrf_token %}
+              <button type="submit" class="text-xs text-red-400 hover:text-red-300 font-medium transition-colors">
+                Deactivate
+              </button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% else %}
+  <div class="bg-gray-800/50 rounded-xl p-12 text-center border border-gray-700/50 border-dashed">
+    <p class="text-4xl mb-3">🚪</p>
+    <p class="text-gray-400 font-medium">No devices registered</p>
+    <p class="text-sm text-gray-600 mt-1 mb-4">Register your first RFID reader or door controller</p>
+    <a href="{% url 'front_desk:device_register' %}" class="accent-btn px-5 py-2.5 rounded-lg text-sm font-semibold inline-block">
+      Register Device
+    </a>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

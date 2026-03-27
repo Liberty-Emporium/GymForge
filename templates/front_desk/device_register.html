@@ -1,0 +1,74 @@
+{% extends "base/front_desk_base.html" %}
+
+{% block title %}Register Device{% endblock %}
+{% block page_title %}Register Door Device{% endblock %}
+
+{% block header_actions %}
+<a href="{% url 'front_desk:device_list' %}"
+   class="px-4 py-2 rounded-lg border border-gray-600 text-sm text-gray-300 hover:border-gray-400 transition-colors">
+  ← Back to Devices
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-lg">
+
+  <div class="bg-blue-900/20 border border-blue-700/30 rounded-xl p-4 mb-6">
+    <p class="text-sm text-blue-300 font-semibold mb-1">⚠ Important — read before registering</p>
+    <p class="text-sm text-blue-200 leading-relaxed">
+      The device token will be shown <strong>once only</strong> after registration.
+      Copy it immediately and configure it on your Raspberry Pi or door agent.
+      It cannot be retrieved again — you would need to deactivate and re-register the device.
+    </p>
+  </div>
+
+  <form method="post" class="bg-gray-800 rounded-xl p-6 space-y-5">
+    {% csrf_token %}
+
+    <div>
+      <label class="block text-sm font-medium text-gray-300 mb-1.5">Device Name *</label>
+      <input type="text" name="name" value="{{ post.name|default:'' }}" required
+             placeholder="e.g. Main Entrance Reader"
+             class="w-full bg-gray-700 border {% if errors.name %}border-red-500{% else %}border-gray-600{% endif %}
+                    rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-accent transition-colors">
+      {% if errors.name %}
+      <p class="text-xs text-red-400 mt-1">{{ errors.name }}</p>
+      {% endif %}
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-300 mb-1.5">Device Type *</label>
+      <select name="device_type" required
+              class="w-full bg-gray-700 border {% if errors.device_type %}border-red-500{% else %}border-gray-600{% endif %}
+                     rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-accent transition-colors">
+        <option value="">Select type…</option>
+        {% for value, label in device_types %}
+        <option value="{{ value }}" {% if post.device_type == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      {% if errors.device_type %}
+      <p class="text-xs text-red-400 mt-1">{{ errors.device_type }}</p>
+      {% endif %}
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-300 mb-1.5">Location *</label>
+      <select name="location" required
+              class="w-full bg-gray-700 border {% if errors.location %}border-red-500{% else %}border-gray-600{% endif %}
+                     rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-accent transition-colors">
+        <option value="">Select location…</option>
+        {% for loc in locations %}
+        <option value="{{ loc.id }}" {% if post.location == loc.id|stringformat:'s' %}selected{% endif %}>{{ loc.name }}</option>
+        {% endfor %}
+      </select>
+      {% if errors.location %}
+      <p class="text-xs text-red-400 mt-1">{{ errors.location }}</p>
+      {% endif %}
+    </div>
+
+    <button type="submit" class="w-full accent-btn py-3 rounded-xl font-semibold text-sm">
+      Register Device &amp; Generate Token
+    </button>
+  </form>
+</div>
+{% endblock %}

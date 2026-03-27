@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>
+    {% if profile %}{{ profile.gym_name }}{% if profile.tagline %} — {{ profile.tagline }}{% endif %}
+    {% else %}Welcome{% endif %}
+  </title>
+  <meta name="description" content="{% if profile %}{{ profile.tagline }}{% endif %}">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+
+  {# ── CSS variable injection from branding system (Step 20) ── #}
+  <style>
+    :root {
+      --primary: {{ primary_color|default:"#1a1a2e" }};
+      --accent:  {{ accent_color|default:"#e94560" }};
+    }
+
+    /* Brand utility classes — var() only, never hardcoded hex */
+    .bg-primary    { background-color: var(--primary); }
+    .bg-accent     { background-color: var(--accent); }
+    .text-accent   { color: var(--accent); }
+    .border-accent { border-color: var(--accent); }
+
+    .btn-accent {
+      background-color: var(--accent);
+      color: #fff;
+      transition: filter 0.15s ease;
+    }
+    .btn-accent:hover { filter: brightness(1.1); }
+
+    .btn-outline-accent {
+      border: 2px solid var(--accent);
+      color: var(--accent);
+      transition: background-color 0.15s ease, color 0.15s ease;
+    }
+    .btn-outline-accent:hover {
+      background-color: var(--accent);
+      color: #fff;
+    }
+
+    /* Hero: primary background with depth overlay */
+    .hero-bg {
+      background-color: var(--primary);
+      background-image: linear-gradient(160deg, var(--primary) 30%, rgba(0,0,0,0.55) 100%);
+    }
+
+    /* Alternating section shades */
+    .section-dark  { background-color: #0c0c14; }
+    .section-mid   { background-color: #111118; }
+
+    /* Accent divider bar */
+    .accent-bar { background-color: var(--accent); }
+
+    /* Sticky nav scroll transition */
+    #main-nav { transition: background-color 0.3s ease, box-shadow 0.3s ease; }
+    #main-nav.scrolled { background-color: var(--primary); box-shadow: 0 2px 24px rgba(0,0,0,0.6); }
+
+    /* Card hover lift */
+    .card-lift { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .card-lift:hover { transform: translateY(-3px); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+
+    /* Pricing highlight ring */
+    .tier-featured { outline: 2px solid var(--accent); outline-offset: 2px; }
+  </style>
+
+  {# Pass CSRF for HTMX POST requests #}
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <script>
+    document.addEventListener('htmx:configRequest', function(e) {
+      const token = document.querySelector('meta[name="csrf-token"]');
+      if (token) e.detail.headers['X-CSRFToken'] = token.content;
+    });
+  </script>
+</head>
+
+<body class="bg-gray-950 text-gray-100 font-sans antialiased">
+
+{# ════════════════════════════════════════════════════════════
+   STICKY NAVIGATION
+════════════════════════════════════════════════════════════ #}
+<nav id="main-nav" class="fixed top-0 left-0 right-0 z-50 bg-transparent">
+  <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+
+    {# Gym identity #}
+    <a href="/" class="flex items-center gap-3">
+      {% if gym_logo_url %}
+      <img src="{{ gym_logo_url }}" alt="{{ gym_name }}"
+           class="w-9 h-9 rounded-xl object-contain bg-white/10 p-0.5">
+      {% else %}
+      <div class="w-9 h-9 rounded-xl btn-accent flex items-center justify-center font-bold text-base">
+        {{ gym_name|first|upper|default:"G" }}
+      </div>
+      {% endif %}
+      <span class="font-bold text-white text-lg">{{ gym_name }}</span>
+    </a>
+
+    {# Section nav links (desktop) #}
+    <div class="hidden md:flex items-center gap-6 text-sm text-white/70">
+      {% if 'about' in active_sections %}
+      <a href="#about" class="hover:text-white transition-colors">About</a>
+      {% endif %}
+      {% if 'classes' in active_sections %}
+      <a href="#classes" class="hover:text-white transition-colors">Classes</a>
+      {% endif %}
+      {% if 'trainers' in active_sections %}
+      <a href="#trainers" class="hover:text-white transition-colors">Trainers</a>
+      {% endif %}
+      {% if 'pricing' in active_sections %}
+      <a href="#pricing" class="hover:text-white transition-colors">Pricing</a>
+      {% endif %}
+      {% if 'contact' in active_sections %}
+      <a href="#contact" class="hover:text-white transition-colors">Contact</a>
+      {% endif %}
+    </div>
+
+    {# CTA #}
+    {% if 'contact' in active_sections %}
+    <a href="#contact"
+       class="btn-accent px-5 py-2 rounded-xl text-sm font-semibold hidden sm:block">
+      Join Today
+    </a>
+    {% endif %}
+  </div>
+</nav>
+
+<script>
+  window.addEventListener('scroll', function() {
+    const nav = document.getElementById('main-nav');
+    nav.classList.toggle('scrolled', window.scrollY > 60);
+  });
+</script>
+
+
+{# ════════════════════════════════════════════════════════════
+   SECTION 1 — HERO
+════════════════════════════════════════════════════════════ #}
+{% if 'hero' in active_sections or not active_sections %}
+<section id="hero"
+         class="hero-bg min-h-screen flex flex-col items-center justify-center text-center px-6 pt-20 relative overflow-hidden">
+
+  {# Background banner image overlay #}
+  {% if profile.banner_image %}
+  <div class="absolute inset-0 z-0">
+    <img src="{{ profile.banner_image.url }}" alt="" class="w-full h-full object-cover opacity-20">
+  </div>
+  {% endif %}
+
+  <div class="relative z-10 max-w-3xl mx-auto">
+    {% if gym_logo_url %}
+    <img src="{{ gym_logo_url }}" alt="{{ gym_name }} logo"
+         class="w-20 h-20 rounded-2xl object-contain bg-white/10 p-1 mx-auto mb-6">
+    {% endif %}
+
+    <h1 class="text-5xl sm:text-6xl font-extrabold text-white leading-tight tracking-tight">
+      {{ gym_name }}
+    </h1>
+
+    {% if gym_tagline %}
+    <p class="text-xl sm:text-2xl text-white/70 mt-4 font-light">{{ gym_tagline }}</p>
+    {% endif %}
+
+    <div class="w-16 h-1 accent-bar rounded-full mx-auto mt-6"></div>
+
+    <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10">
+      {% if 'contact' in active_sections %}
+      <a href="#contact"
+         class="btn-accent px-8 py-3.5 rounded-xl font-semibold text-base w-full sm:w-auto">
+        Get Started — It's Free
+      </a>
+      {% endif %}
+      {% if 'pricing' in active_sections %}
+      <a href="#pricing"
+         class="btn-outline-accent px-8 py-3.5 rounded-xl font-semibold text-base w-full sm:w-auto">
+        View Plans
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  {# Scroll cue #}
+  <div class="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce text-white/40">
+    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+    </svg>
+  </div>
+</section>
+{% endif %}
+
+
+{# ════════════════════════════════════════════════════════════
+   SECTION 2 — ABOUT
+════════════════════════════════════════════════════════════ #}
+{% if 'about' in active_sections %}
+<section id="about" class="section-mid py-20 px-6">
+  <div class="max-w-6xl mx-auto">
+    <div class="max-w-2xl mb-12">
+      <p class="text-accent text-sm font-semibold uppercase tracking-widest mb-3">About Us</p>
+      <h2 class="text-3xl sm:text-4xl font-bold text-white leading-tight">
+        {% if profile.about_text %}{{ profile.about_text|truncatechars:80 }}{% else %}Welcome to {{ gym_name }}{% endif %}
+      </h2>
+      {% if profile.about_text %}
+      <p class="text-gray-400 mt-4 text-base leading-relaxed">{{ profile.about_text }}</p>
+      {% endif %}
+    </div>
+
+    {% if services %}
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+      {% for service in services %}
+      <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 card-lift">
+        <div class="w-8 h-8 rounded-lg accent-bar flex items-center justify-center mb-3">
+          <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+          </svg>
+        </div>
+        <p class="text-sm font-medium text-white">{{ service.name }}</p>
+        {% if service.description %}
+        <p class="text-xs text-gray-500 mt-1">{{ service.description|truncatechars:50 }}</p>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endif %}
+
+
+{# ════════════════════════════════════════════════════════════
+   SECTION 3 — CLASSES
+════════════════════════════════════════════════════════════ #}
+{% if 'classes' in active_sections and class_types %}
+<section id="classes" class="section-dark py-20 px-6">
+  <div class="max-w-6xl mx-auto">
+    <div class="text-center mb-12">
+      <p class="text-accent text-sm font-semibold uppercase tracking-widest mb-3">What We Offer</p>
+      <h2 class="text-3xl sm:text-4xl font-bold text-white">Our Classes</h2>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+      {% for ct in class_types %}
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden card-lift">
+
+        {# Cover image or branded gradient placeholder #}
+        {% if ct.cover_image %}
+        <img src="{{ ct.cover_image.url }}" alt="{{ ct.name }}"
+             class="w-full h-36 object-cover">
+        {% else %}
+        <div class="w-full h-36 flex items-center justify-center text-white/20 text-4xl font-black"
+             style="background: linear-gradient(135deg, var(--primary) 0%, rgba(0,0,0,0.6) 100%)">
+          {{ ct.name|first|upper }}
+        </div>
+        {% endif %}
+
+        <div class="p-4">
+          <h3 class="font-semibold text-white text-base">{{ ct.name }}</h3>
+          {% if ct.description %}
+          <p class="text-xs text-gray-400 mt-1 leading-relaxed">{{ ct.description|truncatechars:80 }}</p>
+          {% endif %}
+          <div class="flex items-center gap-1.5 mt-3">
+            <svg class="w-3.5 h-3.5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <span class="text-xs text-accent font-medium">{{ ct.duration_minutes }} min</span>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% if 'contact' in active_sections %}
+    <div class="text-center mt-10">
+      <a href="#contact" class="btn-accent px-7 py-3 rounded-xl font-semibold text-sm inline-block">
+        Book a Free Trial Class
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endif %}
+
+
+{# ════════════════════════════════════════════════════════════
+   SECTION 4 — TRAINERS
+════════════════════════════════════════════════════════════ #}
+{% if 'trainers' in active_sections and trainers %}
+<section id="trainers" class="section-mid py-20 px-6">
+  <div class="max-w-6xl mx-auto">
+    <div class="text-center mb-12">
+      <p class="text-accent text-sm font-semibold uppercase tracking-widest mb-3">Our Team</p>
+      <h2 class="text-3xl sm:text-4xl font-bold text-white">Meet Your Trainers</h2>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {% for trainer in trainers %}
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 card-lift">
+
+        {# Photo or initials avatar #}
+        {% if trainer.user.profile_photo %}
+        <img src="{{ trainer.user.profile_photo.url }}"
+             alt="{{ trainer.user.get_full_name }}"
+             class="w-20 h-20 rounded-2xl object-cover mb-4">
+        {% else %}
+        <div class="w-20 h-20 rounded-2xl btn-accent flex items-center justify-center text-2xl font-bold mb-4">
+          {{ trainer.user.first_name|first|upper|default:trainer.user.email|first|upper }}
+        </div>
+        {% endif %}
+
+        <h3 class="font-bold text-white text-lg">{{ trainer.user.get_full_name }}</h3>
+
+        {% if trainer.specialties %}
+        <p class="text-accent text-sm font-medium mt-1">{{ trainer.specialties }}</p>
+        {% endif %}
+
+        {% if trainer.bio %}
+        <p class="text-gray-400 text-sm mt-3 leading-relaxed">{{ trainer.bio|truncatechars:120 }}</p>
+        {% endif %}
+
+        {% if trainer.certifications %}
+        <div class="mt-3 flex flex-wrap gap-1.5">
+          {% for cert in trainer.certifications.split:',' %}
+          <span class="text-xs px-2 py-0.5 rounded-full bg-gray-800 text-gray-400 border border-gray-700">
+            {{ cert|strip }}
+          </span>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+
+{# ════════════════════════════════════════════════════════════
+   SECTION 5 — PRICING
+════════════════════════════════════════════════════════════ #}
+{% if 'pricing' in active_sections and tiers %}
+<section id="pricing" class="section-dark py-20 px-6">
+  <div class="max-w-5xl mx-auto">
+    <div class="text-center mb-12">
+      <p class="text-accent text-sm font-semibold uppercase tracking-widest mb-3">Membership</p>
+      <h2 class="text-3xl sm:text-4xl font-bold text-white">Simple, Transparent Pricing</h2>
+      <p class="text-gray-400 mt-3">No hidden fees. Cancel anytime.</p>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
+      {% for tier in tiers %}
+      {# Feature the middle tier on 3-column layouts #}
+      {% with is_featured=forloop.counter == 2 and tiers|length == 3 %}
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 flex flex-col card-lift
+                  {% if is_featured %}tier-featured{% endif %}">
+
+        {% if is_featured %}
+        <div class="text-center mb-4">
+          <span class="btn-accent text-xs font-semibold px-3 py-1 rounded-full">Most Popular</span>
+        </div>
+        {% endif %}
+
+        <h3 class="text-xl font-bold text-white">{{ tier.name }}</h3>
+        {% if tier.description %}
+        <p class="text-sm text-gray-400 mt-1 mb-4">{{ tier.description }}</p>
+        {% endif %}
+
+        <div class="flex items-end gap-1 my-4">
+          {% if tier.billing_cycle == 'free' %}
+          <span class="text-4xl font-extrabold text-white">Free</span>
+          {% elif tier.billing_cycle == 'drop_in' %}
+          <span class="text-4xl font-extrabold text-white">${{ tier.price }}</span>
+          <span class="text-gray-500 text-sm mb-1">/ visit</span>
+          {% elif tier.billing_cycle == 'annual' %}
+          <span class="text-4xl font-extrabold text-white">${{ tier.price }}</span>
+          <span class="text-gray-500 text-sm mb-1">/ year</span>
+          {% else %}
+          <span class="text-4xl font-extrabold text-white">${{ tier.price }}</span>
+          <span class="text-gray-500 text-sm mb-1">/ mo</span>
+          {% endif %}
+        </div>
+
+        {% if tier.included_services.exists %}
+        <ul class="space-y-2 flex-1 mb-6">
+          {% for service in tier.included_services.all %}
+          <li class="flex items-center gap-2 text-sm text-gray-300">
+            <svg class="w-4 h-4 text-accent flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+            </svg>
+            {{ service.name }}
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <div class="flex-1"></div>
+        {% endif %}
+
+        {% if tier.trial_days > 0 %}
+        <p class="text-xs text-accent text-center mb-3">{{ tier.trial_days }}-day free trial included</p>
+        {% endif %}
+
+        {% if 'contact' in active_sections %}
+        <a href="#contact"
+           class="{% if is_featured %}btn-accent{% else %}btn-outline-accent{% endif %} text-center px-5 py-2.5 rounded-xl font-semibold text-sm mt-auto block">
+          Get Started
+        </a>
+        {% endif %}
+      </div>
+      {% endwith %}
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+
+{# ════════════════════════════════════════════════════════════
+   SECTION 6 — CONTACT / LEAD CAPTURE
+════════════════════════════════════════════════════════════ #}
+{% if 'contact' in active_sections %}
+<section id="contact" class="section-mid py-20 px-6">
+  <div class="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12">
+
+    {# Lead capture form — HTMX powered #}
+    <div>
+      <p class="text-accent text-sm font-semibold uppercase tracking-widest mb-3">Get In Touch</p>
+      <h2 class="text-3xl font-bold text-white mb-2">Start Your Journey</h2>
+      <p class="text-gray-400 mb-8">Leave your details and our team will reach out within 24 hours.</p>
+
+      <div id="lead-form-container">
+        {% include "landing/partials/lead_form.html" %}
+      </div>
+    </div>
+
+    {# Location & hours info #}
+    <div class="space-y-6">
+      <div>
+        <p class="text-accent text-sm font-semibold uppercase tracking-widest mb-3">Find Us</p>
+        {% if locations %}
+        {% for location in locations %}
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-5 mb-4">
+          <h3 class="font-semibold text-white mb-1">{{ location.name }}</h3>
+          <p class="text-sm text-gray-400">{{ location.address }}</p>
+          {% if location.phone %}
+          <p class="text-sm text-gray-400 mt-1">📞 {{ location.phone }}</p>
+          {% endif %}
+          {% if location.email %}
+          <p class="text-sm text-gray-400">✉ {{ location.email }}</p>
+          {% endif %}
+
+          {# Opening hours #}
+          {% if location.hours.exists %}
+          <div class="mt-4 border-t border-gray-800 pt-4">
+            <p class="text-xs text-gray-500 uppercase tracking-wide font-medium mb-2">Hours</p>
+            <div class="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-400">
+              {% for h in location.hours.all %}
+              <div class="flex justify-between gap-2">
+                <span class="text-gray-500">{{ h.get_day_display }}</span>
+                <span>
+                  {% if h.is_closed %}
+                  <span class="text-gray-600">Closed</span>
+                  {% else %}
+                  {{ h.open_time|time:"g:i A" }} – {{ h.close_time|time:"g:i A" }}
+                  {% endif %}
+                </span>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+        {% endif %}
+      </div>
+
+      {# Social links #}
+      {% if profile %}
+      {% with links=profile.get_active_social_links %}
+      {% if links %}
+      <div>
+        <p class="text-xs text-gray-500 uppercase tracking-wide font-medium mb-3">Follow Us</p>
+        <div class="flex items-center gap-3">
+          {% if links.instagram %}
+          <a href="{{ links.instagram }}" target="_blank" rel="noopener"
+             class="w-9 h-9 rounded-lg bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors">
+            <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+          </a>
+          {% endif %}
+          {% if links.facebook %}
+          <a href="{{ links.facebook }}" target="_blank" rel="noopener"
+             class="w-9 h-9 rounded-lg bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors">
+            <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+          </a>
+          {% endif %}
+          {% if links.tiktok %}
+          <a href="{{ links.tiktok }}" target="_blank" rel="noopener"
+             class="w-9 h-9 rounded-lg bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors">
+            <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>
+          </a>
+          {% endif %}
+          {% if links.youtube %}
+          <a href="{{ links.youtube }}" target="_blank" rel="noopener"
+             class="w-9 h-9 rounded-lg bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors">
+            <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 24 24"><path d="M23.495 6.205a3.007 3.007 0 0 0-2.088-2.088c-1.87-.501-9.396-.501-9.396-.501s-7.507-.01-9.396.501A3.007 3.007 0 0 0 .527 6.205a31.247 31.247 0 0 0-.522 5.805 31.247 31.247 0 0 0 .522 5.783 3.007 3.007 0 0 0 2.088 2.088c1.868.502 9.396.502 9.396.502s7.506 0 9.396-.502a3.007 3.007 0 0 0 2.088-2.088 31.247 31.247 0 0 0 .5-5.783 31.247 31.247 0 0 0-.5-5.805zM9.609 15.601V8.408l6.264 3.602z"/></svg>
+          </a>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+      {% endwith %}
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+
+{# ════════════════════════════════════════════════════════════
+   FOOTER — gym identity only, no GymForge branding
+════════════════════════════════════════════════════════════ #}
+<footer class="section-dark border-t border-gray-800 py-8 px-6">
+  <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-gray-600">
+    <div class="flex items-center gap-3">
+      {% if gym_logo_url %}
+      <img src="{{ gym_logo_url }}" alt="{{ gym_name }}" class="w-6 h-6 rounded object-contain">
+      {% endif %}
+      <span class="font-medium text-gray-500">{{ gym_name }}</span>
+    </div>
+    <p>&copy; {% now "Y" %} {{ gym_name }}. All rights reserved.</p>
+  </div>
+</footer>
+
+</body>
+</html>

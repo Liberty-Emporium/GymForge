@@ -1,0 +1,17 @@
+{% for t in page_obj %}
+<tr class="border-b border-gray-800 hover:bg-gray-800/40 transition-colors">
+  <td class="px-4 py-3">
+    <a href="{% url 'platform_admin:tenant_detail' t.pk %}" class="font-medium text-white hover:text-brand transition-colors">{{ t.gym_name }}</a>
+    <p class="text-xs text-gray-500">{{ t.schema_name }}</p>
+  </td>
+  <td class="px-4 py-3 text-sm text-gray-300">{{ t.owner_email }}</td>
+  <td class="px-4 py-3">{% include "platform/partials/status_badge.html" with status=t.subscription_status %}</td>
+  <td class="px-4 py-3 text-sm text-gray-400">{{ t.plan.name|default:"—" }}</td>
+  <td class="px-4 py-3 text-sm text-gray-400">{{ t.created_at|date:"M j, Y" }}</td>
+  <td class="px-4 py-3 text-right">
+    <a href="{% url 'platform_admin:tenant_detail' t.pk %}" class="text-xs text-brand hover:text-white transition-colors">View →</a>
+  </td>
+</tr>
+{% empty %}
+<tr><td colspan="6" class="px-4 py-10 text-center text-gray-500 text-sm">No gyms found.</td></tr>
+{% endfor %}

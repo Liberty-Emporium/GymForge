@@ -1,0 +1,36 @@
+{% extends "base/front_desk_base.html" %}
+{% block title %}Guest Check-In{% endblock %}
+{% block page_title %}Guest Check-In{% endblock %}
+{% block header_actions %}
+<a href="{% url 'front_desk:dashboard' %}" class="text-sm text-gray-400 hover:text-white transition-colors">← Back</a>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-md space-y-6">
+
+  <div class="bg-gray-800 rounded-2xl p-6 space-y-5">
+    <div>
+      <p class="text-base font-semibold text-white">Check In a Guest</p>
+      <p class="text-sm text-gray-400 mt-1">Creates a non-member check-in record at {{ location.name|default:"this location" }}.</p>
+    </div>
+
+    <form method="post" class="space-y-4">
+      {% csrf_token %}
+      <div class="bg-gray-700/50 rounded-xl p-4 text-sm text-gray-400">
+        <p>This will log a guest visit for today's date.</p>
+        <p class="mt-1">No membership validation is performed for guests.</p>
+      </div>
+      <button type="submit"
+              class="w-full accent-btn py-4 rounded-xl font-bold text-base">
+        ✓ Check In Guest
+      </button>
+    </form>
+
+    <a href="{% url 'front_desk:walk_in' %}"
+       class="block text-center text-sm text-accent hover:underline">
+      Register as a new member instead →
+    </a>
+  </div>
+
+</div>
+{% endblock %}

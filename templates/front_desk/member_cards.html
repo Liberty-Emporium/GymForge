@@ -1,0 +1,131 @@
+{% extends "base/front_desk_base.html" %}
+
+{% block title %}Cards — {{ member.full_name }}{% endblock %}
+{% block page_title %}RFID Cards — {{ member.full_name }}{% endblock %}
+
+{% block header_actions %}
+<a href="{% url 'front_desk:card_print_pdf' cards.0.id %}"
+   {% if not cards %}style="pointer-events:none;opacity:.4"{% endif %}
+   target="_blank"
+   class="px-4 py-2 rounded-lg border border-gray-600 text-sm text-gray-300 hover:border-gray-400 transition-colors">
+  🖨 Print Active Card
+</a>
+<form method="post" action="{% url 'front_desk:card_issue' member.id %}"
+      onsubmit="return confirm('Issue a new RFID card to {{ member.full_name }}?')">
+  {% csrf_token %}
+  <button type="submit" class="accent-btn px-4 py-2 rounded-lg text-sm font-semibold">
+    + Issue New Card
+  </button>
+</form>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl space-y-4">
+
+  <!-- Member summary -->
+  <div class="bg-gray-800 rounded-xl p-4 flex items-center gap-4">
+    <div class="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center flex-shrink-0">
+      <span class="text-xl font-bold text-gray-300">{{ member.full_name|first|upper }}</span>
+    </div>
+    <div>
+      <p class="font-semibold text-white">{{ member.full_name }}</p>
+      <p class="text-sm text-gray-400">{{ member.email }}</p>
+      {% with ms=member.active_membership %}
+      {% if ms %}
+      <p class="text-xs text-green-400 mt-0.5">{{ ms.tier.name }} — Active</p>
+      {% else %}
+      <p class="text-xs text-yellow-400 mt-0.5">No active membership</p>
+      {% endif %}
+      {% endwith %}
+    </div>
+  </div>
+
+  <!-- Cards list -->
+  {% if cards %}
+  <div class="space-y-3">
+    {% for card in cards %}
+    <div class="bg-gray-800 rounded-xl p-4 {% if not card.is_active %}opacity-60{% endif %}">
+      <div class="flex items-start justify-between gap-3">
+        <div>
+          <div class="flex items-center gap-2 mb-1">
+            <p class="font-mono font-bold text-white text-lg">{{ card.card_number }}</p>
+            {% if card.is_active %}
+            <span class="text-xs font-medium bg-green-900/50 text-green-400 border border-green-700/50 px-2 py-0.5 rounded-full">Active</span>
+            {% else %}
+            <span class="text-xs font-medium bg-red-900/50 text-red-400 border border-red-700/50 px-2 py-0.5 rounded-full">Inactive</span>
+            {% endif %}
+          </div>
+          <p class="text-xs text-gray-500">
+            Issued {{ card.issued_at|date:"d M Y H:i" }}
+            {% if card.issued_by %} by {{ card.issued_by.get_full_name }}{% endif %}
+          </p>
+          {% if not card.is_active and card.deactivated_at %}
+          <p class="text-xs text-red-400 mt-1">
+            Deactivated {{ card.deactivated_at|date:"d M Y" }}
+            {% if card.deactivation_reason %} — {{ card.deactivation_reason }}{% endif %}
+          </p>
+          {% endif %}
+        </div>
+
+        {% if card.is_active %}
+        <div class="flex gap-2 flex-shrink-0">
+          <a href="{% url 'front_desk:card_print_pdf' card.id %}"
+             target="_blank"
+             class="px-3 py-1.5 rounded-lg border border-gray-600 text-xs text-gray-300 hover:border-gray-400 transition-colors">
+            Print PDF
+          </a>
+          <form method="post" action="{% url 'front_desk:card_replace' card.id %}"
+                onsubmit="return confirm('Replace {{ card.card_number }}? The old card will stop working immediately.')">
+            {% csrf_token %}
+            <button type="submit" class="px-3 py-1.5 rounded-lg border border-yellow-700/50 text-xs text-yellow-400 hover:bg-yellow-900/20 transition-colors">
+              Replace
+            </button>
+          </form>
+          <div x-data="{ open: false }" class="relative">
+            <button onclick="this.closest('.deactivate-wrap').querySelector('.deactivate-form').classList.toggle('hidden')"
+                    class="px-3 py-1.5 rounded-lg border border-red-700/50 text-xs text-red-400 hover:bg-red-900/20 transition-colors deactivate-wrap">
+              Deactivate
+            </button>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Deactivate sub-form (hidden toggle) -->
+      {% if card.is_active %}
+      <form method="post" action="{% url 'front_desk:card_deactivate' card.id %}"
+            class="deactivate-form hidden mt-3 pt-3 border-t border-gray-700 flex gap-2">
+        {% csrf_token %}
+        <input type="text" name="deactivation_reason" placeholder="Reason (optional)"
+               class="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-3 py-1.5 text-sm text-white focus:border-red-500 focus:outline-none">
+        <button type="submit" class="px-4 py-1.5 rounded-lg bg-red-700 text-white text-sm font-medium hover:bg-red-600 transition-colors">
+          Confirm
+        </button>
+      </form>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="bg-gray-800/50 rounded-xl p-10 text-center border border-gray-700/50 border-dashed">
+    <p class="text-4xl mb-3">💳</p>
+    <p class="text-gray-400 font-medium">No cards issued yet</p>
+    <p class="text-sm text-gray-600 mt-1">Issue a card to enable RFID access for this member</p>
+  </div>
+  {% endif %}
+
+</div>
+
+<script>
+  // Toggle deactivate forms
+  document.querySelectorAll('.deactivate-wrap').forEach(btn => {
+    btn.addEventListener('click', () => {
+      btn.closest('.deactivate-wrap')
+        ?.closest('[class*="rounded-xl"]')
+        ?.querySelector('.deactivate-form')
+        ?.classList.toggle('hidden');
+    });
+  });
+</script>
+{% endblock %}

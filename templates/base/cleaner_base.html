@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Cleaner Portal{% endblock %}{% if gym_name %} — {{ gym_name }}{% endif %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  <style>
+    :root { --primary: {{ primary_color|default:"#1a1a2e" }}; --accent: {{ accent_color|default:"#e94560" }}; }
+    .topbar-bg { background-color: var(--primary); }
+    .accent-btn { background-color: var(--accent); color: #fff; }
+    .accent-btn:hover { filter: brightness(1.12); }
+    .accent-text { color: var(--accent); }
+    .bottom-tab-active { color: var(--accent); }
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<!-- Mobile-first layout: top bar + bottom navigation -->
+<body class="h-full flex flex-col font-sans antialiased bg-gray-950 text-gray-100">
+
+  <!-- Top bar -->
+  <header class="topbar-bg flex items-center justify-between px-4 py-3 flex-shrink-0">
+    <div class="flex items-center gap-3">
+      {% if gym_logo_url %}
+      <img src="{{ gym_logo_url }}" alt="{{ gym_name }}" class="w-8 h-8 rounded-lg object-contain bg-white/10 p-0.5">
+      {% else %}
+      <div class="w-8 h-8 rounded-lg accent-btn flex items-center justify-center font-bold text-sm">
+        {{ gym_name|first|upper|default:"G" }}
+      </div>
+      {% endif %}
+      <p class="font-semibold text-white text-sm">{{ gym_name|default:"My Gym" }}</p>
+    </div>
+    <span class="text-xs text-white/60">{{ request.user.get_full_name|default:request.user.email }}</span>
+  </header>
+
+  <!-- Page title -->
+  <div class="px-4 py-4 border-b border-gray-800 flex-shrink-0">
+    <h1 class="text-lg font-semibold text-white">{% block page_title %}{% endblock %}</h1>
+  </div>
+
+  {% if messages %}
+  <div class="px-4 pt-3 space-y-2 flex-shrink-0">
+    {% for msg in messages %}<div class="px-4 py-3 rounded-lg text-sm {% if msg.tags == 'error' %}bg-red-900/50 border border-red-700 text-red-300{% else %}bg-green-900/50 border border-green-700 text-green-300{% endif %}">{{ msg }}</div>{% endfor %}
+  </div>
+  {% endif %}
+
+  <main class="flex-1 overflow-y-auto p-4 pb-20">{% block content %}{% endblock %}</main>
+
+  <!-- Bottom navigation -->
+  <nav class="fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-800 flex items-center justify-around py-2 z-10">
+    {% with url_name=request.resolver_match.url_name %}
+    <a href="/cleaner/" class="flex flex-col items-center gap-1 px-4 py-1 {% if url_name == 'dashboard' %}bottom-tab-active{% else %}text-gray-500{% endif %}">
+      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+      <span class="text-xs">Home</span>
+    </a>
+    <a href="/cleaner/tasks/" class="flex flex-col items-center gap-1 px-4 py-1 {% if 'task' in url_name|default:'' %}bottom-tab-active{% else %}text-gray-500{% endif %}">
+      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+      <span class="text-xs">Tasks</span>
+    </a>
+    <a href="/cleaner/equipment/" class="flex flex-col items-center gap-1 px-4 py-1 {% if 'equipment' in url_name|default:'' %}bottom-tab-active{% else %}text-gray-500{% endif %}">
+      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      <span class="text-xs">Equipment</span>
+    </a>
+    <a href="/auth/logout/" class="flex flex-col items-center gap-1 px-4 py-1 text-gray-500">
+      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+      <span class="text-xs">Sign Out</span>
+    </a>
+    {% endwith %}
+  </nav>
+
+</body>
+</html>

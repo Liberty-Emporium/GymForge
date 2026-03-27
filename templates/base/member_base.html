@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}{% endblock %}{% if gym_name %} — {{ gym_name }}{% endif %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  <style>
+    :root {
+      --primary: {{ primary_color|default:"#1a1a2e" }};
+      --accent:  {{ accent_color|default:"#e94560" }};
+    }
+    /* Reusable CSS-variable utilities — never use hardcoded hex in member templates */
+    .bg-primary      { background-color: var(--primary); }
+    .bg-accent       { background-color: var(--accent); }
+    .text-primary    { color: var(--primary); }
+    .text-accent     { color: var(--accent); }
+    .border-accent   { border-color: var(--accent); }
+    .btn-accent      { background-color: var(--accent); color: #fff; }
+    .btn-accent:hover { filter: brightness(1.1); }
+    .btn-primary     { background-color: var(--primary); color: #fff; }
+    .bottom-active   { color: var(--accent); }
+    .bottom-active svg { stroke: var(--accent); }
+    /* Subtle header gradient using primary */
+    .header-bg { background: linear-gradient(135deg, var(--primary) 0%, color-mix(in srgb, var(--primary) 80%, #000) 100%); }
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<!-- Mobile-first member app: fixed header + bottom nav, scrollable content -->
+<body class="h-full flex flex-col font-sans antialiased bg-gray-950 text-gray-100">
+
+  <!-- App header -->
+  <header class="header-bg flex items-center justify-between px-4 py-4 flex-shrink-0 safe-top">
+    <div class="flex items-center gap-3">
+      {% if gym_logo_url %}
+      <img src="{{ gym_logo_url }}" alt="{{ gym_name }}"
+           class="w-8 h-8 rounded-lg object-contain bg-white/15 p-0.5">
+      {% else %}
+      <div class="w-8 h-8 rounded-lg btn-accent flex items-center justify-center font-bold text-sm">
+        {{ gym_name|first|upper|default:"G" }}
+      </div>
+      {% endif %}
+      <h1 class="font-semibold text-white text-base leading-tight">
+        {% block header_title %}{{ gym_name|default:"My Gym" }}{% endblock %}
+      </h1>
+    </div>
+    <div class="flex items-center gap-2">
+      {% block header_actions %}
+      <a href="/app/notifications/" class="relative p-2 text-white/70 hover:text-white transition-colors" aria-label="Notifications">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+      </a>
+      {% endblock %}
+    </div>
+  </header>
+
+  <!-- Flash messages -->
+  {% if messages %}
+  <div class="px-4 pt-3 space-y-2 flex-shrink-0">
+    {% for msg in messages %}
+    <div class="px-4 py-3 rounded-xl text-sm {% if msg.tags == 'error' %}bg-red-900/50 border border-red-700 text-red-300{% else %}bg-green-900/50 border border-green-700 text-green-300{% endif %}">
+      {{ msg }}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Page content -->
+  <main class="flex-1 overflow-y-auto pb-20">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Bottom navigation -->
+  <nav class="fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-800 flex items-center justify-around pt-2 pb-safe z-20">
+    {% with url_name=request.resolver_match.url_name %}
+
+    <a href="/app/" class="flex flex-col items-center gap-1 px-3 py-1 transition-colors {% if url_name == 'dashboard' or url_name == 'home' %}bottom-active{% else %}text-gray-500{% endif %}">
+      <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+      <span class="text-xs font-medium">Home</span>
+    </a>
+
+    <a href="/app/classes/" class="flex flex-col items-center gap-1 px-3 py-1 transition-colors {% if 'class' in url_name|default:'' or 'schedule' in url_name|default:'' %}bottom-active{% else %}text-gray-500{% endif %}">
+      <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+      <span class="text-xs font-medium">Classes</span>
+    </a>
+
+    <a href="/app/community/" class="flex flex-col items-center gap-1 px-3 py-1 transition-colors {% if 'community' in url_name|default:'' %}bottom-active{% else %}text-gray-500{% endif %}">
+      <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"/></svg>
+      <span class="text-xs font-medium">Community</span>
+    </a>
+
+    <a href="/app/shop/" class="flex flex-col items-center gap-1 px-3 py-1 transition-colors {% if 'shop' in url_name|default:'' %}bottom-active{% else %}text-gray-500{% endif %}">
+      <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+      <span class="text-xs font-medium">Shop</span>
+    </a>
+
+    <a href="/app/profile/" class="flex flex-col items-center gap-1 px-3 py-1 transition-colors {% if 'profile' in url_name|default:'' or 'account' in url_name|default:'' %}bottom-active{% else %}text-gray-500{% endif %}">
+      <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+      <span class="text-xs font-medium">Profile</span>
+    </a>
+
+    {% endwith %}
+  </nav>
+
+</body>
+</html>

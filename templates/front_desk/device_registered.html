@@ -1,0 +1,76 @@
+{% extends "base/front_desk_base.html" %}
+
+{% block title %}Device Registered{% endblock %}
+{% block page_title %}Device Registered{% endblock %}
+
+{% block content %}
+<div class="max-w-lg space-y-5">
+
+  <!-- Success card -->
+  <div class="bg-green-900/20 border border-green-700/40 rounded-xl p-5">
+    <div class="flex items-center gap-3 mb-2">
+      <span class="text-2xl">✅</span>
+      <p class="font-semibold text-green-300 text-lg">{{ device.name }} registered</p>
+    </div>
+    <p class="text-sm text-green-200">
+      Type: {{ device.get_device_type_display }} &nbsp;·&nbsp;
+      Location: {{ device.location.name }}
+    </p>
+  </div>
+
+  <!-- One-time token display -->
+  <div class="bg-gray-800 rounded-xl p-5">
+    <div class="flex items-start gap-3 mb-4">
+      <span class="text-2xl flex-shrink-0">⚠️</span>
+      <div>
+        <p class="font-semibold text-red-300 mb-1">Copy this token NOW — it will not be shown again</p>
+        <p class="text-sm text-gray-400 leading-relaxed">
+          Configure this token as <code class="bg-gray-700 px-1.5 py-0.5 rounded text-xs">DEVICE_TOKEN</code>
+          in your door agent's environment variables.
+          If you lose it, deactivate this device and register a new one.
+        </p>
+      </div>
+    </div>
+
+    <div class="relative">
+      <code id="token-text"
+            class="block bg-gray-900 border border-gray-600 rounded-xl px-4 py-4 text-sm font-mono text-yellow-300 break-all select-all">{{ device_token }}</code>
+      <button onclick="copyToken()"
+              class="absolute top-3 right-3 text-xs font-medium bg-gray-700 hover:bg-gray-600 text-gray-300 px-3 py-1.5 rounded-lg transition-colors"
+              id="copy-btn">
+        Copy
+      </button>
+    </div>
+  </div>
+
+  <!-- Next steps -->
+  <div class="bg-gray-800 rounded-xl p-5 text-sm text-gray-300 space-y-2">
+    <p class="font-semibold text-white mb-3">Next steps</p>
+    <p>1. SSH into the Raspberry Pi or door agent hardware</p>
+    <p>2. Set <code class="bg-gray-700 px-1 rounded text-xs">DEVICE_TOKEN={{ device_token|slice:":8" }}…</code> in the agent config</p>
+    <p>3. Set <code class="bg-gray-700 px-1 rounded text-xs">API_BASE_URL=https://your-gym-domain.com/api/v1/</code></p>
+    <p>4. Start the door agent service — it will authenticate and begin accepting card scans</p>
+  </div>
+
+  <a href="{% url 'front_desk:device_list' %}"
+     class="block text-center accent-btn py-3 rounded-xl font-semibold text-sm">
+    Back to Device List
+  </a>
+
+</div>
+
+<script>
+function copyToken() {
+  const text = document.getElementById('token-text').textContent.trim();
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = 'Copied!';
+    btn.classList.add('bg-green-700', 'text-white');
+    setTimeout(() => {
+      btn.textContent = 'Copy';
+      btn.classList.remove('bg-green-700', 'text-white');
+    }, 2500);
+  });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,205 @@
+{% extends "base/owner_base.html" %}
+{% block title %}Edit Branding{% endblock %}
+{% block page_title %}Edit Branding{% endblock %}
+
+{% block header_actions %}
+<a href="{% url 'gym_owner:branding_preview' %}"
+   class="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors">
+  Cancel
+</a>
+{% endblock %}
+
+{% block content %}
+<form method="post" enctype="multipart/form-data" class="max-w-2xl space-y-8">
+  {% csrf_token %}
+
+  <!-- Identity -->
+  <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-5">
+    <h2 class="text-sm font-semibold text-white border-b border-gray-800 pb-3">Identity</h2>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-300 mb-1">Gym Name <span class="text-red-400">*</span></label>
+      <input type="text" name="gym_name"
+             value="{{ profile.gym_name|default:'' }}"
+             class="w-full rounded-lg bg-gray-800 border {% if errors.gym_name %}border-red-500{% else %}border-gray-700{% endif %} px-4 py-2.5 text-white text-sm focus:outline-none focus:ring-2"
+             style="--tw-ring-color: var(--accent)">
+      {% if errors.gym_name %}<p class="mt-1 text-xs text-red-400">{{ errors.gym_name }}</p>{% endif %}
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-300 mb-1">Tagline</label>
+      <input type="text" name="tagline"
+             value="{{ profile.tagline|default:'' }}"
+             placeholder="Your gym's motivational one-liner"
+             class="w-full rounded-lg bg-gray-800 border border-gray-700 px-4 py-2.5 text-white text-sm focus:outline-none focus:ring-2"
+             style="--tw-ring-color: var(--accent)">
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-300 mb-1">About Text</label>
+      <textarea name="about_text" rows="4"
+                placeholder="Tell members and prospects about your gym…"
+                class="w-full rounded-lg bg-gray-800 border border-gray-700 px-4 py-2.5 text-white text-sm focus:outline-none focus:ring-2 resize-none"
+                style="--tw-ring-color: var(--accent)">{{ profile.about_text|default:'' }}</textarea>
+    </div>
+  </div>
+
+  <!-- Logo -->
+  <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-4">
+    <h2 class="text-sm font-semibold text-white border-b border-gray-800 pb-3">Logo</h2>
+    {% if profile.logo %}
+    <div class="flex items-center gap-4">
+      <img src="{{ profile.logo.url }}" alt="Current logo"
+           class="w-16 h-16 rounded-xl object-contain bg-gray-800 p-1">
+      <div class="flex flex-col gap-2">
+        <label class="text-xs text-gray-400">Replace logo</label>
+        <input type="file" name="logo" accept="image/*"
+               class="text-sm text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:text-white cursor-pointer"
+               style="--file-bg: var(--accent)">
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" name="clear_logo" value="1" class="rounded">
+          <span class="text-xs text-red-400">Remove logo</span>
+        </label>
+      </div>
+    </div>
+    {% else %}
+    <input type="file" name="logo" accept="image/*"
+           class="text-sm text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-medium file:text-white cursor-pointer">
+    <p class="text-xs text-gray-600">PNG, JPG or SVG recommended. Max 2 MB.</p>
+    {% endif %}
+  </div>
+
+  <!-- Colors -->
+  <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-5">
+    <h2 class="text-sm font-semibold text-white border-b border-gray-800 pb-3">Brand Colors</h2>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-2">Primary Color</label>
+        <div class="flex items-center gap-3">
+          <input type="color" name="primary_color" id="primary_color"
+                 value="{{ profile.primary_color|default:'#1a1a2e' }}"
+                 class="w-10 h-10 rounded-lg border border-gray-700 bg-transparent cursor-pointer p-0.5">
+          <input type="text" id="primary_color_hex"
+                 value="{{ profile.primary_color|default:'#1a1a2e' }}"
+                 maxlength="7"
+                 class="flex-1 rounded-lg bg-gray-800 border {% if errors.primary_color %}border-red-500{% else %}border-gray-700{% endif %} px-3 py-2 text-white text-sm font-mono focus:outline-none focus:ring-2"
+                 style="--tw-ring-color: var(--accent)"
+                 oninput="document.getElementById('primary_color').value=this.value">
+        </div>
+        {% if errors.primary_color %}<p class="mt-1 text-xs text-red-400">{{ errors.primary_color }}</p>{% endif %}
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-2">Accent Color</label>
+        <div class="flex items-center gap-3">
+          <input type="color" name="accent_color" id="accent_color"
+                 value="{{ profile.accent_color|default:'#e94560' }}"
+                 class="w-10 h-10 rounded-lg border border-gray-700 bg-transparent cursor-pointer p-0.5">
+          <input type="text" id="accent_color_hex"
+                 value="{{ profile.accent_color|default:'#e94560' }}"
+                 maxlength="7"
+                 class="flex-1 rounded-lg bg-gray-800 border {% if errors.accent_color %}border-red-500{% else %}border-gray-700{% endif %} px-3 py-2 text-white text-sm font-mono focus:outline-none focus:ring-2"
+                 style="--tw-ring-color: var(--accent)"
+                 oninput="document.getElementById('accent_color').value=this.value">
+        </div>
+        {% if errors.accent_color %}<p class="mt-1 text-xs text-red-400">{{ errors.accent_color }}</p>{% endif %}
+      </div>
+    </div>
+
+    <!-- Live preview -->
+    <div id="color-preview" class="rounded-xl overflow-hidden border border-gray-800">
+      <div id="preview-header" class="px-5 py-4 flex items-center gap-3"
+           style="background-color: {{ profile.primary_color|default:'#1a1a2e' }}">
+        <div id="preview-dot" class="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-bold"
+             style="background-color: {{ profile.accent_color|default:'#e94560' }}">
+          {{ profile.gym_name|first|upper|default:"G" }}
+        </div>
+        <span class="text-white font-semibold text-sm" id="preview-name">{{ profile.gym_name|default:'Your Gym' }}</span>
+      </div>
+      <div class="bg-gray-800 px-5 py-3 flex gap-3">
+        <button type="button" class="px-3 py-1.5 rounded-lg text-xs font-semibold text-white" id="preview-accent-btn"
+                style="background-color: {{ profile.accent_color|default:'#e94560' }}">Book a Class</button>
+        <button type="button" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-700 text-gray-300">Learn More</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Social Links -->
+  <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-4">
+    <h2 class="text-sm font-semibold text-white border-b border-gray-800 pb-3">Social Links</h2>
+    {% for field, label, placeholder in social_fields %}
+    <div>
+      <label class="block text-sm font-medium text-gray-300 mb-1">{{ label }}</label>
+      <input type="url" name="{{ field }}"
+             value="{{ profile|attr:field|default:'' }}"
+             placeholder="{{ placeholder }}"
+             class="w-full rounded-lg bg-gray-800 border border-gray-700 px-4 py-2.5 text-white text-sm focus:outline-none focus:ring-2"
+             style="--tw-ring-color: var(--accent)">
+    </div>
+    {% empty %}
+    <!-- social fields rendered directly since no template tag for dynamic attr -->
+    {% endfor %}
+    <div>
+      <label class="block text-sm font-medium text-gray-300 mb-1">Instagram</label>
+      <input type="url" name="social_instagram" value="{{ profile.social_instagram|default:'' }}"
+             placeholder="https://instagram.com/yourgym"
+             class="w-full rounded-lg bg-gray-800 border border-gray-700 px-4 py-2.5 text-white text-sm focus:outline-none focus:ring-2"
+             style="--tw-ring-color: var(--accent)">
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-300 mb-1">Facebook</label>
+      <input type="url" name="social_facebook" value="{{ profile.social_facebook|default:'' }}"
+             placeholder="https://facebook.com/yourgym"
+             class="w-full rounded-lg bg-gray-800 border border-gray-700 px-4 py-2.5 text-white text-sm focus:outline-none focus:ring-2"
+             style="--tw-ring-color: var(--accent)">
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-300 mb-1">TikTok</label>
+      <input type="url" name="social_tiktok" value="{{ profile.social_tiktok|default:'' }}"
+             placeholder="https://tiktok.com/@yourgym"
+             class="w-full rounded-lg bg-gray-800 border border-gray-700 px-4 py-2.5 text-white text-sm focus:outline-none focus:ring-2"
+             style="--tw-ring-color: var(--accent)">
+    </div>
+    <div>
+      <label class="block text-sm font-medium text-gray-300 mb-1">YouTube</label>
+      <input type="url" name="social_youtube" value="{{ profile.social_youtube|default:'' }}"
+             placeholder="https://youtube.com/@yourgym"
+             class="w-full rounded-lg bg-gray-800 border border-gray-700 px-4 py-2.5 text-white text-sm focus:outline-none focus:ring-2"
+             style="--tw-ring-color: var(--accent)">
+    </div>
+  </div>
+
+  <!-- Submit -->
+  <div class="flex items-center gap-4">
+    <button type="submit"
+            class="px-6 py-2.5 rounded-lg text-sm font-semibold text-white accent-btn transition-opacity hover:opacity-90">
+      Save Branding
+    </button>
+    <a href="{% url 'gym_owner:branding_preview' %}" class="text-sm text-gray-500 hover:text-gray-300 transition-colors">
+      Cancel
+    </a>
+  </div>
+</form>
+
+<script>
+  // Live color preview
+  const primaryInput = document.getElementById('primary_color');
+  const accentInput  = document.getElementById('accent_color');
+  const primaryHex   = document.getElementById('primary_color_hex');
+  const accentHex    = document.getElementById('accent_color_hex');
+  const header       = document.getElementById('preview-header');
+  const dot          = document.getElementById('preview-dot');
+  const accentBtn    = document.getElementById('preview-accent-btn');
+
+  primaryInput.addEventListener('input', () => {
+    primaryHex.value = primaryInput.value;
+    header.style.backgroundColor = primaryInput.value;
+  });
+  accentInput.addEventListener('input', () => {
+    accentHex.value = accentInput.value;
+    dot.style.backgroundColor    = accentInput.value;
+    accentBtn.style.backgroundColor = accentInput.value;
+  });
+</script>
+{% endblock %}

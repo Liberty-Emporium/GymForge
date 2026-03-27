@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% if ok %}Welcome{% else %}Access Denied{% endif %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root { --primary: {{ primary_color|default:"#1a1a2e" }}; --accent: {{ accent_color|default:"#e94560" }}; }
+    body { background-color: {% if ok %}#052e16{% else %}#1f0909{% endif %}; }
+    .accent-bg { background-color: var(--accent); }
+    @keyframes scale-in { from{transform:scale(0.8);opacity:0} to{transform:scale(1);opacity:1} }
+    .scale-in { animation: scale-in 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+    @keyframes countdown { from{width:100%} to{width:0%} }
+    .countdown-bar { animation: countdown 5s linear forwards; }
+  </style>
+</head>
+<body class="h-full flex flex-col items-center justify-center gap-8 select-none overflow-hidden px-8">
+
+  {% if ok %}
+  <!-- SUCCESS -->
+  <div class="scale-in flex flex-col items-center gap-6 text-center">
+    <!-- Tick icon -->
+    <div class="w-32 h-32 rounded-full bg-green-500 flex items-center justify-center shadow-2xl shadow-green-900">
+      <svg class="w-20 h-20 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+      </svg>
+    </div>
+
+    <!-- Member photo if available -->
+    {% if profile_photo_url %}
+    <img src="{{ profile_photo_url }}" alt="" class="w-24 h-24 rounded-full object-cover border-4 border-green-500">
+    {% endif %}
+
+    <div>
+      <p class="text-5xl font-black text-white">{{ member_name }}</p>
+      <p class="text-2xl text-green-400 mt-2">Welcome!</p>
+    </div>
+
+    {% if loyalty_points is not None %}
+    <div class="bg-white/10 rounded-2xl px-8 py-4 text-center">
+      <p class="text-4xl font-black text-white">{{ loyalty_points }}</p>
+      <p class="text-sm text-white/60">Loyalty Points</p>
+    </div>
+    {% endif %}
+
+    {% if code == 'guest' %}
+    <p class="text-white/50 text-lg">Guest visit recorded.</p>
+    {% endif %}
+  </div>
+
+  {% else %}
+  <!-- DENIED -->
+  <div class="scale-in flex flex-col items-center gap-6 text-center">
+    <div class="w-32 h-32 rounded-full bg-red-600 flex items-center justify-center shadow-2xl shadow-red-900">
+      <svg class="w-20 h-20 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+    </div>
+    <div>
+      <p class="text-4xl font-black text-white">Access Denied</p>
+      <p class="text-xl text-red-300 mt-3 max-w-sm leading-relaxed">{{ message }}</p>
+    </div>
+    <p class="text-white/40 text-base">Please visit the front desk for assistance.</p>
+  </div>
+  {% endif %}
+
+  <!-- Auto-return countdown bar -->
+  <div class="fixed bottom-0 left-0 right-0 h-1.5 bg-white/10">
+    <div class="countdown-bar h-full {% if ok %}bg-green-400{% else %}bg-red-500{% endif %}"></div>
+  </div>
+  <p class="fixed bottom-4 text-white/30 text-xs">Returning to home screen in 5 seconds…</p>
+
+  <script>
+    setTimeout(() => { window.location.href = '{% url "kiosk:idle" %}'; }, 5000);
+  </script>
+
+</body>
+</html>

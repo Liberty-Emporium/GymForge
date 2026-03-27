@@ -1,0 +1,58 @@
+{% extends "base/front_desk_base.html" %}
+{% block title %}Manual Check-In{% endblock %}
+{% block page_title %}Manual Check-In{% endblock %}
+{% block header_actions %}
+<a href="{% url 'front_desk:dashboard' %}" class="text-sm text-gray-400 hover:text-white transition-colors">← Back</a>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl space-y-5">
+
+  <!-- Search form -->
+  <form method="post" class="flex gap-3">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="search">
+    <input type="text" name="q" value="{{ query }}"
+           placeholder="Search by name or email…"
+           autofocus
+           class="flex-1 bg-gray-800 border border-gray-600 rounded-xl px-5 py-4 text-base text-white placeholder-gray-500 focus:outline-none focus:border-accent transition-colors">
+    <button type="submit"
+            class="accent-btn px-7 py-4 rounded-xl font-bold text-base">
+      Search
+    </button>
+  </form>
+
+  <!-- Results -->
+  {% if results %}
+  <div class="bg-gray-800 rounded-2xl overflow-hidden">
+    <div class="divide-y divide-gray-700/50">
+      {% for member in results %}
+      <div class="px-5 py-4 flex items-center justify-between">
+        <div>
+          <p class="font-semibold text-white text-base">{{ member.full_name }}</p>
+          <p class="text-sm text-gray-500">{{ member.email }}</p>
+        </div>
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="checkin">
+          <input type="hidden" name="member_id" value="{{ member.pk }}">
+          <button type="submit"
+                  class="accent-btn px-6 py-3 rounded-xl font-bold text-sm">
+            ✓ Check In
+          </button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% elif query %}
+  <div class="bg-gray-800 rounded-2xl py-12 text-center">
+    <p class="text-gray-500 text-base">No members found for "{{ query }}"</p>
+    <a href="{% url 'front_desk:walk_in' %}" class="inline-block mt-4 accent-btn px-6 py-3 rounded-xl font-semibold text-sm">
+      Register as New Member
+    </a>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

@@ -1,0 +1,85 @@
+{% extends "base/manager_base.html" %}
+{% block title %}{% if session %}Edit{% else %}New{% endif %} Class Session{% endblock %}
+
+{% block content %}
+<div class="max-w-xl">
+  <div class="flex items-center gap-4 mb-6">
+    <a href="{% url 'manager:schedule' %}" class="text-gray-400 hover:text-white transition-colors">
+      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+      </svg>
+    </a>
+    <h1 class="text-xl font-bold text-white">
+      {% if session %}Edit Session{% else %}Schedule New Session{% endif %}
+    </h1>
+  </div>
+
+  <form method="post" class="bg-gray-800 rounded-xl p-6 space-y-5">
+    {% csrf_token %}
+
+    <div>
+      <label class="block text-sm font-medium text-gray-300 mb-1.5">Class Type *</label>
+      <select name="class_type" required
+              class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-accent transition-colors">
+        <option value="">Select class type…</option>
+        {% for ct in class_types %}
+        <option value="{{ ct.id }}" {% if session and session.class_type_id == ct.id %}selected{% endif %}>
+          {{ ct.name }} ({{ ct.duration_minutes }} min)
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-300 mb-1.5">Trainer</label>
+      <select name="trainer"
+              class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-accent transition-colors">
+        <option value="">No trainer assigned</option>
+        {% for t in trainers %}
+        <option value="{{ t.id }}" {% if session and session.trainer_id == t.id %}selected{% endif %}>
+          {{ t.get_full_name }} ({{ t.get_role_display }})
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-1.5">Start *</label>
+        <input type="datetime-local" name="start_datetime" required
+               value="{% if session %}{{ session.start_datetime|date:'Y-m-d\TH:i' }}{% endif %}"
+               class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-accent transition-colors">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-1.5">End *</label>
+        <input type="datetime-local" name="end_datetime" required
+               value="{% if session %}{{ session.end_datetime|date:'Y-m-d\TH:i' }}{% endif %}"
+               class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-accent transition-colors">
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-300 mb-1.5">Capacity</label>
+      <input type="number" name="capacity" min="1" max="500"
+             value="{{ session.capacity|default:20 }}"
+             class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-accent transition-colors">
+    </div>
+
+    <div>
+      <label class="block text-sm font-medium text-gray-300 mb-1.5">Session Notes</label>
+      <textarea name="session_notes" rows="3" placeholder="Optional notes for this session…"
+                class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-accent transition-colors resize-none">{{ session.session_notes|default:'' }}</textarea>
+    </div>
+
+    <div class="flex gap-3 pt-2">
+      <button type="submit" class="flex-1 accent-btn py-3 rounded-xl font-semibold text-sm">
+        {% if session %}Save Changes{% else %}Create Session{% endif %}
+      </button>
+      <a href="{% url 'manager:schedule' %}"
+         class="px-5 py-3 rounded-xl border border-gray-600 text-sm text-gray-300 hover:border-gray-400 transition-colors text-center">
+        Cancel
+      </a>
+    </div>
+  </form>
+</div>
+{% endblock %}

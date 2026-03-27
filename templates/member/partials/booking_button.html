@@ -1,0 +1,74 @@
+{% comment %}
+Booking button partial — replaced in-place via HTMX after book/cancel.
+Rendered inside <div id="book-btn-{{ session.id }}"> on the schedule page,
+and standalone on the class detail page.
+
+Context:
+  session  — ClassSession instance
+  booking  — Booking instance (or None if not booked)
+{% endcomment %}
+
+{% if booking %}
+  {% if booking.status == 'confirmed' %}
+  <!-- Confirmed — show cancel -->
+  <form hx-post="{% url 'members:cancel_booking' booking.id %}"
+        hx-target="#book-btn-{{ session.id }}"
+        hx-swap="outerHTML"
+        hx-confirm="Cancel your booking for {{ session.class_type.name }}?"
+        class="inline">
+    {% csrf_token %}
+    <button type="submit"
+            class="text-xs font-semibold px-3 py-2 rounded-xl bg-green-700/40 text-green-300 border border-green-700/50 hover:bg-red-900/40 hover:text-red-300 hover:border-red-700/50 transition-colors whitespace-nowrap">
+      ✓ Booked
+    </button>
+  </form>
+
+  {% elif booking.status == 'waitlisted' %}
+  <!-- Waitlisted — show leave waitlist -->
+  <form hx-post="{% url 'members:cancel_booking' booking.id %}"
+        hx-target="#book-btn-{{ session.id }}"
+        hx-swap="outerHTML"
+        hx-confirm="Leave the waitlist for {{ session.class_type.name }}?"
+        class="inline">
+    {% csrf_token %}
+    <button type="submit"
+            class="text-xs font-semibold px-3 py-2 rounded-xl bg-yellow-700/40 text-yellow-300 border border-yellow-700/50 hover:bg-red-900/40 hover:text-red-300 hover:border-red-700/50 transition-colors whitespace-nowrap">
+      #{{ booking.waitlist_position }} Wait
+    </button>
+  </form>
+
+  {% else %}
+  <!-- Cancelled / attended / no_show — read-only badge -->
+  <span class="text-xs px-3 py-2 rounded-xl bg-gray-700/40 text-gray-500 border border-gray-700/50 whitespace-nowrap">
+    {{ booking.get_status_display }}
+  </span>
+  {% endif %}
+
+{% else %}
+  {% if session.is_full %}
+  <!-- Full — offer waitlist -->
+  <form hx-post="{% url 'members:book_class' session.id %}"
+        hx-target="#book-btn-{{ session.id }}"
+        hx-swap="outerHTML"
+        class="inline">
+    {% csrf_token %}
+    <button type="submit"
+            class="text-xs font-semibold px-3 py-2 rounded-xl bg-yellow-700/30 text-yellow-300 border border-yellow-700/50 hover:bg-yellow-700/50 transition-colors whitespace-nowrap">
+      Waitlist
+    </button>
+  </form>
+
+  {% else %}
+  <!-- Spots available — book -->
+  <form hx-post="{% url 'members:book_class' session.id %}"
+        hx-target="#book-btn-{{ session.id }}"
+        hx-swap="outerHTML"
+        class="inline">
+    {% csrf_token %}
+    <button type="submit"
+            class="text-xs font-semibold px-3 py-2 rounded-xl btn-accent hover:opacity-90 transition-opacity whitespace-nowrap">
+      Book
+    </button>
+  </form>
+  {% endif %}
+{% endif %}

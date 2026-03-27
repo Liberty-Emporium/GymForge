@@ -1,0 +1,107 @@
+{% extends "platform/base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block header_actions %}
+<a href="{% url 'platform_admin:tenant_create' %}"
+   class="px-4 py-2 bg-brand hover:bg-brand-dark text-white text-sm font-medium rounded-lg transition-colors">
+  + New Gym
+</a>
+{% endblock %}
+
+{% block content %}
+<!-- Stat cards -->
+<div class="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+  {% for label, key, colour in stat_cards %}
+  {% endfor %}
+  {% with cards=stat_cards %}
+  <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+    <p class="text-xs text-gray-400 uppercase tracking-wide font-medium mb-1">Total Gyms</p>
+    <p class="text-3xl font-bold text-white">{{ stats.total }}</p>
+  </div>
+  <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+    <p class="text-xs text-yellow-400 uppercase tracking-wide font-medium mb-1">Trial</p>
+    <p class="text-3xl font-bold text-yellow-400">{{ stats.trial }}</p>
+  </div>
+  <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+    <p class="text-xs text-green-400 uppercase tracking-wide font-medium mb-1">Active</p>
+    <p class="text-3xl font-bold text-green-400">{{ stats.active }}</p>
+  </div>
+  <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+    <p class="text-xs text-red-400 uppercase tracking-wide font-medium mb-1">Suspended</p>
+    <p class="text-3xl font-bold text-red-400">{{ stats.suspended }}</p>
+  </div>
+  <div class="bg-gray-900 border border-gray-800 rounded-xl p-5">
+    <p class="text-xs text-gray-500 uppercase tracking-wide font-medium mb-1">Cancelled</p>
+    <p class="text-3xl font-bold text-gray-500">{{ stats.cancelled }}</p>
+  </div>
+  {% endwith %}
+</div>
+
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+
+  <!-- Trials expiring soon -->
+  {% if expiring_soon %}
+  <div class="xl:col-span-1 bg-yellow-900/20 border border-yellow-700/40 rounded-xl p-5">
+    <h2 class="text-sm font-semibold text-yellow-400 mb-3 flex items-center gap-2">
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+      Trials Expiring Soon
+    </h2>
+    <ul class="space-y-2">
+      {% for t in expiring_soon %}
+      <li class="flex items-center justify-between text-sm">
+        <a href="{% url 'platform_admin:tenant_detail' t.pk %}" class="text-white hover:text-yellow-300 font-medium">{{ t.gym_name }}</a>
+        <span class="text-yellow-400 font-medium">{{ t.trial_days_remaining }}d left</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <!-- Recent gyms -->
+  <div class="{% if expiring_soon %}xl:col-span-2{% else %}xl:col-span-2{% endif %} bg-gray-900 border border-gray-800 rounded-xl">
+    <div class="px-5 py-4 border-b border-gray-800 flex items-center justify-between">
+      <h2 class="text-sm font-semibold text-white">Recent Gyms</h2>
+      <a href="{% url 'platform_admin:tenant_list' %}" class="text-xs text-brand hover:text-white transition-colors">View all →</a>
+    </div>
+    <div class="divide-y divide-gray-800">
+      {% for t in recent_tenants %}
+      <div class="px-5 py-3 flex items-center justify-between hover:bg-gray-800/50 transition-colors">
+        <div>
+          <a href="{% url 'platform_admin:tenant_detail' t.pk %}" class="text-sm font-medium text-white hover:text-brand transition-colors">{{ t.gym_name }}</a>
+          <p class="text-xs text-gray-500">{{ t.owner_email }}</p>
+        </div>
+        <div class="flex items-center gap-3">
+          {% include "platform/partials/status_badge.html" with status=t.subscription_status %}
+          <span class="text-xs text-gray-500">{{ t.created_at|date:"M j, Y" }}</span>
+        </div>
+      </div>
+      {% empty %}
+      <p class="px-5 py-6 text-sm text-gray-500 text-center">No gyms provisioned yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Recent audit log -->
+  <div class="xl:col-span-3 bg-gray-900 border border-gray-800 rounded-xl">
+    <div class="px-5 py-4 border-b border-gray-800 flex items-center justify-between">
+      <h2 class="text-sm font-semibold text-white">Recent Audit Events</h2>
+      <a href="{% url 'platform_admin:audit_log' %}" class="text-xs text-brand hover:text-white transition-colors">View all →</a>
+    </div>
+    <div class="divide-y divide-gray-800">
+      {% for log in recent_logs %}
+      <div class="px-5 py-3 flex items-start gap-4">
+        <span class="text-xs text-gray-500 w-32 flex-shrink-0 mt-0.5">{{ log.timestamp|date:"M j H:i" }}</span>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm text-white">{{ log.action }}</p>
+          <p class="text-xs text-gray-500">{{ log.actor_email }}{% if log.gym_schema %} · {{ log.gym_schema }}{% endif %}</p>
+        </div>
+      </div>
+      {% empty %}
+      <p class="px-5 py-6 text-sm text-gray-500 text-center">No audit events yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

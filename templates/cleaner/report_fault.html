@@ -1,0 +1,57 @@
+{% extends "base/cleaner_base.html" %}
+{% block title %}Report Fault{% endblock %}
+{% block page_title %}Report Equipment Fault{% endblock %}
+
+{% block content %}
+<div class="space-y-4">
+
+  <form method="post" enctype="multipart/form-data" class="bg-gray-800 rounded-2xl p-5 space-y-5">
+    {% csrf_token %}
+
+    <div>
+      <label class="block text-sm font-semibold text-gray-300 mb-2">Equipment</label>
+      <select name="equipment_id"
+              class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-4 text-base text-white focus:outline-none focus:border-accent transition-colors">
+        <option value="">— Unknown / General Fault —</option>
+        {% for eq in equipment_qs %}
+        <option value="{{ eq.id }}">{{ eq.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label class="block text-sm font-semibold text-gray-300 mb-2">Fault Description *</label>
+      <input type="text" name="title" required
+             placeholder="e.g. Treadmill belt slipping"
+             class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-4 text-base text-white placeholder-gray-500 focus:outline-none focus:border-accent transition-colors">
+    </div>
+
+    <div>
+      <label class="block text-sm font-semibold text-gray-300 mb-2">Additional Details</label>
+      <textarea name="description" rows="4"
+                placeholder="Describe the problem in more detail…"
+                class="w-full bg-gray-700 border border-gray-600 rounded-xl px-4 py-4 text-base text-white placeholder-gray-500 focus:outline-none focus:border-accent transition-colors resize-none"></textarea>
+    </div>
+
+    <!-- Photo upload -->
+    <div>
+      <label class="block text-sm font-semibold text-gray-300 mb-2">Photo <span class="text-gray-500 font-normal">(optional)</span></label>
+      <label class="block w-full border-2 border-dashed border-gray-600 rounded-xl p-5 text-center cursor-pointer hover:border-accent transition-colors">
+        <input type="file" name="photo" accept="image/*" capture="environment" class="hidden">
+        <p class="text-sm text-gray-400">Tap to take photo or upload</p>
+      </label>
+    </div>
+
+    <button type="submit"
+            class="block w-full accent-btn py-5 rounded-2xl font-bold text-base">
+      Submit Fault Report
+    </button>
+  </form>
+
+  <a href="{% url 'cleaner:dashboard' %}"
+     class="block w-full text-center py-4 rounded-2xl border border-gray-600 text-gray-400 text-base">
+    Cancel
+  </a>
+
+</div>
+{% endblock %}

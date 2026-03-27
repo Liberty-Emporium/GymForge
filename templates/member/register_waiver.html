@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Waiver — {{ profile.gym_name|default:"Your Gym" }}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root { --primary: {{ primary_color|default:"#1a1a2e" }}; --accent: {{ accent_color|default:"#e94560" }}; }
+    .btn-accent { background-color: var(--accent); color: #fff; }
+    .btn-accent:hover { opacity: .88; }
+    .btn-accent:disabled { opacity: .4; cursor: not-allowed; }
+  </style>
+</head>
+<body class="min-h-screen bg-gray-50 flex flex-col items-center py-10 px-4">
+
+  <!-- Logo -->
+  <div class="mb-6 text-center">
+    {% if profile and profile.logo %}
+      <img src="{{ profile.logo.url }}" alt="{{ profile.gym_name }}" class="h-12 mx-auto mb-2">
+    {% else %}
+      <h1 class="text-2xl font-bold" style="color:var(--primary)">{{ profile.gym_name|default:"Your Gym" }}</h1>
+    {% endif %}
+  </div>
+
+  <!-- Step indicator -->
+  <div class="flex items-center gap-1 mb-8 text-sm">
+    <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-white" style="background:var(--primary)">✓</div>
+    <div class="w-8 h-px bg-gray-300"></div>
+    <div class="w-8 h-8 rounded-full flex items-center justify-center font-bold text-white" style="background:var(--accent)">2</div>
+    <div class="w-8 h-px bg-gray-300"></div>
+    <div class="w-8 h-8 rounded-full bg-gray-200 text-gray-400 flex items-center justify-center font-bold">3</div>
+    <div class="w-8 h-px bg-gray-300"></div>
+    <div class="w-8 h-8 rounded-full bg-gray-200 text-gray-400 flex items-center justify-center font-bold">4</div>
+    <div class="w-8 h-px bg-gray-300"></div>
+    <div class="w-8 h-8 rounded-full bg-gray-200 text-gray-400 flex items-center justify-center font-bold">5</div>
+  </div>
+
+  <div class="w-full max-w-lg bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+    <h2 class="text-xl font-bold text-gray-900 mb-1">Liability Waiver</h2>
+    <p class="text-sm text-gray-500 mb-5">Step 2 of 5 — Please read and accept the waiver below</p>
+
+    <!-- Waiver text -->
+    <div class="bg-gray-50 rounded-xl p-4 mb-5 h-64 overflow-y-auto text-sm text-gray-700 leading-relaxed border">
+      {% if profile and profile.waiver_text %}
+        {{ profile.waiver_text|linebreaks }}
+      {% else %}
+        <p class="text-gray-400 italic">No waiver text has been set. Contact the gym for more information.</p>
+      {% endif %}
+    </div>
+
+    <form method="post" action="{% url 'members:register_waiver' %}">
+      {% csrf_token %}
+
+      {% if errors.accept_waiver %}
+        <div class="bg-red-50 border border-red-200 rounded-lg px-4 py-2 mb-3 text-red-700 text-sm">
+          {{ errors.accept_waiver }}
+        </div>
+      {% endif %}
+
+      <label class="flex items-start gap-3 mb-6 cursor-pointer">
+        <input type="checkbox" name="accept_waiver" id="accept_waiver"
+               class="mt-0.5 rounded border-gray-300 text-accent focus:ring-0 cursor-pointer"
+               onchange="document.getElementById('continueBtn').disabled = !this.checked">
+        <span class="text-sm text-gray-700">
+          I have read and understand the liability waiver above. I accept its terms and release
+          <strong>{{ profile.gym_name|default:"the gym" }}</strong> from liability for any injury
+          occurring during my participation in gym activities.
+        </span>
+      </label>
+
+      <button type="submit" id="continueBtn" disabled class="btn-accent w-full py-3 rounded-xl font-semibold text-sm transition">
+        Accept & Continue →
+      </button>
+    </form>
+  </div>
+
+</body>
+</html>

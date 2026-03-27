@@ -1,0 +1,26 @@
+{# HTMX partial — appended to #new-messages after each send #}
+{# Renders one user bubble + one AI bubble, plus optional supplement disclaimer #}
+
+<!-- User message -->
+<div class="flex justify-end">
+  <div class="bubble-user max-w-[80%] px-4 py-2.5 text-sm text-white leading-relaxed">
+    {{ user_message }}
+  </div>
+</div>
+
+<!-- AI reply -->
+<div class="flex gap-2 items-end mt-3">
+  <div class="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs flex-shrink-0"
+       style="background:var(--primary)">AI</div>
+  <div class="max-w-[80%]">
+    <div class="bubble-ai px-4 py-2.5 text-sm text-gray-100 leading-relaxed">
+      {{ reply|linebreaksbr }}
+    </div>
+
+    {% if show_disclaimer %}
+      <div class="disclaimer-box mt-1.5">
+        ⚠️ {{ disclaimer }}
+      </div>
+    {% endif %}
+  </div>
+</div>

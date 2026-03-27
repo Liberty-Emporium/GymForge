@@ -1,0 +1,105 @@
+{% extends "base/owner_base.html" %}
+{% block title %}Shop Products{% endblock %}
+{% block page_title %}Shop Products{% endblock %}
+{% block header_actions %}
+<a href="{% url 'gym_owner:shop_product_new' %}" class="accent-btn px-4 py-2 rounded-lg text-sm font-semibold">+ New Product</a>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+
+  <!-- Low stock alert -->
+  {% if low_stock %}
+  <div class="bg-red-900/20 border border-red-700/30 rounded-xl p-4">
+    <p class="text-sm font-semibold text-red-400 mb-2">⚠ Low Stock (under {{ low_stock_threshold }} units)</p>
+    <div class="flex flex-wrap gap-2">
+      {% for p in low_stock %}
+      <span class="text-xs bg-red-900/40 text-red-300 px-2 py-1 rounded-lg">{{ p.name }} ({{ p.stock }} left)</span>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Products table -->
+  <div class="bg-gray-800 rounded-xl overflow-hidden">
+    {% if products %}
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-gray-700 text-xs text-gray-500 uppercase tracking-wider">
+          <th class="text-left px-5 py-3 font-medium">Product</th>
+          <th class="text-left px-4 py-3 font-medium">Category</th>
+          <th class="text-left px-4 py-3 font-medium">Price</th>
+          <th class="text-left px-4 py-3 font-medium">Stock</th>
+          <th class="text-left px-4 py-3 font-medium">Status</th>
+          <th class="px-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-700/50">
+        {% for product in products %}
+        <tr class="hover:bg-gray-700/20 transition-colors {% if not product.is_active %}opacity-50{% endif %}">
+          <td class="px-5 py-3">
+            <div class="flex items-center gap-3">
+              {% if product.image %}
+              <img src="{{ product.image.url }}" alt="" class="w-10 h-10 rounded-lg object-cover flex-shrink-0">
+              {% else %}
+              <div class="w-10 h-10 rounded-lg bg-gray-700 flex items-center justify-center flex-shrink-0">
+                <svg class="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>
+              </div>
+              {% endif %}
+              <div>
+                <p class="font-semibold text-white">{{ product.name }}</p>
+                {% if product.sku %}<p class="text-xs text-gray-500">SKU: {{ product.sku }}</p>{% endif %}
+              </div>
+            </div>
+          </td>
+          <td class="px-4 py-3 text-gray-300 text-xs capitalize">{{ product.get_category_display }}</td>
+          <td class="px-4 py-3 font-semibold text-white">${{ product.price }}</td>
+          <td class="px-4 py-3">
+            <div class="flex items-center gap-2">
+              <span class="{% if product.stock == 0 %}text-red-400{% elif product.stock < low_stock_threshold %}text-yellow-400{% else %}text-white{% endif %} font-semibold text-sm">
+                {{ product.stock }}
+              </span>
+              <!-- Inline stock update -->
+              <form method="post" action="{% url 'gym_owner:shop_stock_update' product.pk %}" class="flex items-center gap-1">
+                {% csrf_token %}
+                <input type="number" name="stock" value="{{ product.stock }}" min="0"
+                       class="w-16 bg-gray-700 border border-gray-600 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-accent">
+                <button type="submit" class="text-xs text-accent hover:underline">Set</button>
+              </form>
+            </div>
+          </td>
+          <td class="px-4 py-3">
+            <span class="text-xs px-2 py-0.5 rounded-full {% if product.is_active %}bg-green-900/40 text-green-400{% else %}bg-gray-700 text-gray-500{% endif %}">
+              {% if product.is_active %}Active{% else %}Inactive{% endif %}
+            </span>
+          </td>
+          <td class="px-4 py-3 text-right">
+            <div class="flex items-center justify-end gap-3">
+              <a href="{% url 'gym_owner:shop_product_edit' product.pk %}" class="text-xs text-accent hover:underline">Edit</a>
+              <form method="post" action="{% url 'gym_owner:shop_product_toggle' product.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="text-xs text-gray-400 hover:text-white transition-colors">
+                  {% if product.is_active %}Deactivate{% else %}Activate{% endif %}
+                </button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="py-14 text-center">
+      <p class="text-gray-500 text-sm">No products yet.</p>
+      <a href="{% url 'gym_owner:shop_product_new' %}" class="inline-block mt-4 accent-btn px-5 py-2.5 rounded-lg text-sm font-semibold">Create First Product</a>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Quick link to orders -->
+  <div class="flex justify-end">
+    <a href="{% url 'gym_owner:shop_orders' %}" class="text-sm text-accent hover:underline">View All Orders →</a>
+  </div>
+
+</div>
+{% endblock %}

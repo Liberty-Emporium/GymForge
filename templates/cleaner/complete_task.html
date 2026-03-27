@@ -1,0 +1,48 @@
+{% extends "base/cleaner_base.html" %}
+{% block title %}Complete Task{% endblock %}
+{% block page_title %}Complete Task{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+
+  <!-- Task info -->
+  <div class="bg-gray-800 rounded-2xl p-5">
+    <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">{{ task.template.get_shift_type_display }}</p>
+    <h2 class="text-xl font-bold text-white">{{ task.template.name }}</h2>
+    <p class="text-sm text-gray-400 mt-1">{{ task.template.area }}</p>
+    {% if task.template.description %}
+    <p class="text-sm text-gray-300 mt-3 leading-relaxed">{{ task.template.description }}</p>
+    {% endif %}
+  </div>
+
+  <!-- Completion form -->
+  <form method="post" enctype="multipart/form-data" class="space-y-4">
+    {% csrf_token %}
+
+    <!-- Photo upload (optional) -->
+    <div class="bg-gray-800 rounded-2xl p-5 space-y-3">
+      <p class="text-sm font-semibold text-white">Verification Photo <span class="text-gray-500 font-normal">(optional)</span></p>
+      <label class="block w-full border-2 border-dashed border-gray-600 rounded-xl p-6 text-center cursor-pointer hover:border-accent transition-colors">
+        <input type="file" name="verification_photo" accept="image/*" capture="environment" class="hidden">
+        <svg class="w-8 h-8 text-gray-500 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+        <p class="text-sm text-gray-400">Tap to take photo or upload</p>
+      </label>
+    </div>
+
+    <!-- Submit -->
+    <button type="submit"
+            class="block w-full accent-btn py-5 rounded-2xl font-bold text-xl">
+      ✓ Mark as Complete
+    </button>
+  </form>
+
+  <a href="{% url 'cleaner:task_list' %}"
+     class="block w-full text-center py-4 rounded-2xl border border-gray-600 text-gray-400 text-base font-semibold">
+    Cancel
+  </a>
+
+</div>
+{% endblock %}

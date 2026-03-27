@@ -1,0 +1,78 @@
+{% extends "base/member_base.html" %}
+{% block title %}Community{% endblock %}
+
+{% block content %}
+<div class="space-y-4 pb-24">
+
+  <!-- Header + create post button -->
+  <div class="flex items-center justify-between">
+    <h1 class="text-xl font-bold text-white">Community</h1>
+    <a href="{% url 'community:challenges' %}"
+       class="text-sm accent-text font-semibold">Challenges →</a>
+  </div>
+
+  <!-- Create post box -->
+  <div class="bg-gray-800 rounded-2xl p-4">
+    <form method="post" action="{% url 'community:create_post' %}" enctype="multipart/form-data">
+      {% csrf_token %}
+      <textarea name="content" rows="3" placeholder="Share a workout, achievement, or update…"
+                class="w-full bg-gray-700 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none resize-none border border-transparent focus:border-accent transition-colors"></textarea>
+      <div class="flex items-center justify-between mt-3">
+        <div class="flex items-center gap-3">
+          <select name="post_type"
+                  class="bg-gray-700 border border-gray-600 text-gray-300 text-xs rounded-lg px-3 py-2 focus:outline-none">
+            <option value="general">General</option>
+            <option value="achievement">Achievement</option>
+            <option value="workout">Workout</option>
+            <option value="challenge">Challenge Update</option>
+          </select>
+          <label class="cursor-pointer text-xs text-gray-400 hover:text-gray-200 transition-colors">
+            📷 Photo
+            <input type="file" name="image" accept="image/*" class="hidden">
+          </label>
+        </div>
+        <button type="submit" class="accent-btn px-5 py-2 rounded-xl text-sm font-semibold">Post</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Pinned posts -->
+  {% for post in pinned %}
+  <div class="bg-gray-800 rounded-2xl overflow-hidden border border-yellow-600/30">
+    <div class="px-4 py-2 bg-yellow-900/20 border-b border-yellow-700/20 flex items-center gap-1.5">
+      <span class="text-yellow-400 text-xs">📌 Pinned</span>
+    </div>
+    {% include "member/partials/post_card.html" with post=post %}
+  </div>
+  {% endfor %}
+
+  <!-- Regular feed -->
+  {% for post in page_obj %}
+  <div class="bg-gray-800 rounded-2xl overflow-hidden">
+    {% include "member/partials/post_card.html" with post=post %}
+  </div>
+  {% empty %}
+  {% if not pinned %}
+  <div class="bg-gray-800 rounded-2xl py-12 text-center">
+    <p class="text-gray-500">No posts yet. Be the first to share something!</p>
+  </div>
+  {% endif %}
+  {% endfor %}
+
+  <!-- Pagination -->
+  {% if page_obj.has_other_pages %}
+  <div class="flex justify-center gap-3">
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}"
+       class="px-4 py-2 rounded-xl border border-gray-600 text-sm text-gray-300 hover:border-gray-400 transition-colors">← Prev</a>
+    {% endif %}
+    <span class="px-4 py-2 text-sm text-gray-500">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}"
+       class="px-4 py-2 rounded-xl border border-gray-600 text-sm text-gray-300 hover:border-gray-400 transition-colors">Next →</a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

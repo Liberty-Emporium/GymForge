@@ -1,0 +1,210 @@
+{% extends "base/member_base.html" %}
+
+{% block title %}AI Coach{% endblock %}
+{% block header_title %}AI Coach{% endblock %}
+
+{% block header_actions %}
+  <!-- New conversation -->
+  <form method="post" action="/app/ai/new/" class="flex">
+    {% csrf_token %}
+    <input type="hidden" name="session_type" value="{{ session_type }}">
+    <button type="submit"
+            title="Start new conversation"
+            class="p-2 text-white/60 hover:text-white transition-colors">
+      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+      </svg>
+    </button>
+  </form>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+  .bubble-ai   { background: #1f2937; border-radius: 0 1rem 1rem 1rem; }
+  .bubble-user { background-color: var(--accent); border-radius: 1rem 1rem 0 1rem; }
+  .tab-active  { background-color: var(--accent); color: #fff; }
+  .tab-inactive { background: rgba(255,255,255,.06); color: #9ca3af; }
+  .chip        { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1); }
+  .chip:hover  { background: rgba(255,255,255,.12); }
+  .disclaimer-box {
+    background: rgba(234,179,8,.08);
+    border: 1px solid rgba(234,179,8,.25);
+    border-radius: .75rem;
+    font-size: .72rem;
+    color: #fbbf24;
+    padding: .6rem .75rem;
+    margin-top: .5rem;
+  }
+  /* Make the chat pane fill the space between tabs and bottom nav */
+  #chat-pane {
+    display: flex;
+    flex-direction: column;
+    height: calc(100dvh - 7rem - 4rem - 2.5rem); /* header + tabs + input */
+  }
+  #messages-area { flex: 1; overflow-y: auto; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="flex flex-col h-full max-w-lg mx-auto">
+
+  <!-- ── Session type tabs ─────────────────────────────── -->
+  <div class="flex gap-1.5 px-3 pt-3 pb-2 overflow-x-auto flex-shrink-0">
+    {% for type_key, type_label, type_icon in session_types %}
+      <form method="post" action="/app/ai/session-type/" class="flex-shrink-0">
+        {% csrf_token %}
+        <input type="hidden" name="session_type" value="{{ type_key }}">
+        <button type="submit"
+                class="px-3 py-1.5 rounded-full text-xs font-semibold transition
+                       {% if type_key == session_type %}tab-active{% else %}tab-inactive{% endif %}">
+          {{ type_icon }} {{ type_label }}
+        </button>
+      </form>
+    {% endfor %}
+  </div>
+
+  <!-- ── Chat pane ─────────────────────────────────────── -->
+  <div id="chat-pane" class="px-3">
+
+    <!-- Messages -->
+    <div id="messages-area" class="space-y-3 py-3">
+
+      {% if not conversation %}
+        <!-- Empty state: suggested prompts -->
+        <div id="suggested-prompts" class="py-4">
+          <p class="text-xs text-gray-500 text-center mb-4">
+            {% if session_type == 'workout' %}Ask me anything about training &amp; exercise.
+            {% elif session_type == 'nutrition' %}Ask me anything about diet &amp; nutrition.
+            {% elif session_type == 'intake' %}Update your health profile with me.
+            {% else %}Your personal AI fitness coach. Ask me anything.
+            {% endif %}
+          </p>
+          <div class="grid grid-cols-2 gap-2">
+            {% for prompt in suggested_prompts %}
+              <button type="button"
+                      onclick="fillPrompt('{{ prompt|escapejs }}')"
+                      class="chip rounded-xl px-3 py-2.5 text-xs text-gray-300 text-left leading-snug transition">
+                {{ prompt }}
+              </button>
+            {% endfor %}
+          </div>
+        </div>
+      {% else %}
+        {% for msg in conversation %}
+          {% if msg.role == 'user' %}
+            <div class="flex justify-end">
+              <div class="bubble-user max-w-[80%] px-4 py-2.5 text-sm text-white leading-relaxed">
+                {{ msg.content }}
+              </div>
+            </div>
+          {% elif msg.role == 'assistant' %}
+            <div class="flex gap-2 items-end">
+              <div class="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-white text-xs flex-shrink-0"
+                   style="background:var(--primary)">AI</div>
+              <div class="max-w-[80%]">
+                <div class="bubble-ai px-4 py-2.5 text-sm text-gray-100 leading-relaxed">
+                  {{ msg.content|linebreaksbr }}
+                </div>
+              </div>
+            </div>
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+
+      <!-- HTMX appends new exchanges here -->
+      <div id="new-messages"></div>
+
+      <!-- Typing indicator (hidden by default) -->
+      <div id="typing-indicator" class="hidden flex gap-2 items-end">
+        <div class="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs flex-shrink-0"
+             style="background:var(--primary)">AI</div>
+        <div class="bubble-ai px-4 py-2.5 text-sm text-gray-400 italic">Thinking…</div>
+      </div>
+
+    </div><!-- /messages-area -->
+
+    <!-- ── Input bar ───────────────────────────────────── -->
+    <div class="flex-shrink-0 pb-2">
+      <form id="chat-form"
+            hx-post="/app/ai/send/"
+            hx-target="#new-messages"
+            hx-swap="beforeend"
+            hx-on::before-request="onSend()"
+            hx-on::after-request="onReply()">
+        {% csrf_token %}
+        <div class="flex gap-2 items-end bg-gray-800 rounded-2xl px-3 py-2 border border-gray-700">
+          <textarea name="message"
+                    id="msg-input"
+                    rows="1"
+                    autocomplete="off"
+                    placeholder="Message your AI coach…"
+                    class="flex-1 bg-transparent text-sm text-white placeholder-gray-500 resize-none
+                           focus:outline-none leading-relaxed max-h-28 overflow-y-auto"
+                    onkeydown="submitOnEnter(event)"
+                    oninput="autoResize(this)"></textarea>
+          <button type="submit"
+                  id="send-btn"
+                  class="btn-accent w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 transition">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                    d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+            </svg>
+          </button>
+        </div>
+      </form>
+    </div>
+
+  </div><!-- /chat-pane -->
+
+</div>
+{% endblock %}
+
+<script>
+  function onSend() {
+    // Hide suggested prompts once user sends first message
+    const sp = document.getElementById('suggested-prompts');
+    if (sp) sp.style.display = 'none';
+
+    document.getElementById('typing-indicator').classList.remove('hidden');
+    document.getElementById('send-btn').disabled = true;
+    scrollBottom();
+  }
+
+  function onReply() {
+    document.getElementById('typing-indicator').classList.add('hidden');
+    document.getElementById('send-btn').disabled = false;
+    document.getElementById('msg-input').value = '';
+    autoResize(document.getElementById('msg-input'));
+    scrollBottom();
+  }
+
+  function scrollBottom() {
+    const area = document.getElementById('messages-area');
+    if (area) area.scrollTop = area.scrollHeight;
+  }
+
+  function autoResize(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 112) + 'px';
+  }
+
+  function submitOnEnter(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (document.getElementById('msg-input').value.trim()) {
+        document.getElementById('chat-form').requestSubmit();
+      }
+    }
+  }
+
+  function fillPrompt(text) {
+    const input = document.getElementById('msg-input');
+    input.value = text;
+    autoResize(input);
+    input.focus();
+  }
+
+  document.addEventListener('htmx:afterSettle', scrollBottom);
+  window.addEventListener('load', scrollBottom);
+</script>

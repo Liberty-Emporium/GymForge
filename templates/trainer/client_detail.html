@@ -1,0 +1,189 @@
+{% extends "base/trainer_base.html" %}
+{% block title %}{{ member.full_name }}{% endblock %}
+{% block page_title %}{{ member.full_name }}{% endblock %}
+
+{% block header_actions %}
+<a href="{% url 'trainer:generate_plan' member.pk %}"
+   class="accent-btn px-4 py-2 rounded-lg text-sm font-semibold">Generate AI Plan</a>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Back link -->
+  <a href="{% url 'trainer:clients' %}" class="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors">
+    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+    All Clients
+  </a>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- Left column: Health Profile + Upcoming -->
+    <div class="space-y-5">
+
+      <!-- Health profile summary -->
+      <div class="bg-gray-800 rounded-xl p-5">
+        <p class="font-semibold text-white text-sm mb-3">Health Profile</p>
+        {% if health %}
+        <dl class="space-y-2 text-xs">
+          <div class="flex justify-between">
+            <dt class="text-gray-500">Goal</dt>
+            <dd class="text-gray-300 capitalize">{{ health.fitness_goal|default:"—" }}</dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-gray-500">Activity Level</dt>
+            <dd class="text-gray-300 capitalize">{{ health.activity_level|default:"—" }}</dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-gray-500">Preferred Time</dt>
+            <dd class="text-gray-300 capitalize">{{ health.preferred_workout_time|default:"—" }}</dd>
+          </div>
+          {% if health.injuries_limitations %}
+          <div>
+            <dt class="text-gray-500 mb-0.5">Injuries / Limitations</dt>
+            <dd class="text-yellow-400 text-xs">{{ health.injuries_limitations }}</dd>
+          </div>
+          {% endif %}
+          {% if health.medical_conditions %}
+          <div>
+            <dt class="text-gray-500 mb-0.5">Medical Conditions</dt>
+            <dd class="text-red-400 text-xs">{{ health.medical_conditions }}</dd>
+          </div>
+          {% endif %}
+          <div class="flex justify-between">
+            <dt class="text-gray-500">Sleep</dt>
+            <dd class="text-gray-300">{{ health.sleep_hours|default:"—" }} hrs</dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-gray-500">Stress Level</dt>
+            <dd class="text-gray-300">{{ health.stress_level|default:"—" }}/5</dd>
+          </div>
+        </dl>
+        {% else %}
+        <p class="text-xs text-gray-600">Health intake not completed.</p>
+        {% endif %}
+      </div>
+
+      <!-- Upcoming appointments -->
+      <div class="bg-gray-800 rounded-xl overflow-hidden">
+        <div class="px-5 py-3 border-b border-gray-700">
+          <p class="font-semibold text-white text-sm">Upcoming Sessions</p>
+        </div>
+        {% if upcoming_appointments %}
+        <div class="divide-y divide-gray-700/50">
+          {% for appt in upcoming_appointments %}
+          <div class="px-5 py-3 flex items-center justify-between">
+            <div>
+              <p class="text-sm text-white">{{ appt.scheduled_at|date:"D d M" }}</p>
+              <p class="text-xs text-gray-500">{{ appt.scheduled_at|date:"g:i A" }} · {{ appt.duration_minutes }} min</p>
+            </div>
+            <a href="{% url 'trainer:session_log' appt.pk %}"
+               class="text-xs text-accent hover:underline">Log</a>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="px-5 py-6 text-xs text-gray-600 text-center">No upcoming sessions</p>
+        {% endif %}
+      </div>
+
+      <!-- Body metrics -->
+      <div class="bg-gray-800 rounded-xl overflow-hidden">
+        <div class="px-5 py-3 border-b border-gray-700">
+          <p class="font-semibold text-white text-sm">Body Metrics</p>
+        </div>
+        {% if recent_metrics %}
+        <div class="divide-y divide-gray-700/50">
+          {% for bm in recent_metrics %}
+          <div class="px-5 py-3 text-xs">
+            <p class="text-gray-400 mb-1">{{ bm.recorded_at|date:"d M Y" }}</p>
+            <div class="flex gap-4">
+              {% if bm.weight_kg %}<span class="text-white">{{ bm.weight_kg }} kg</span>{% endif %}
+              {% if bm.body_fat_percent %}<span class="text-gray-400">{{ bm.body_fat_percent }}% BF</span>{% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="px-5 py-6 text-xs text-gray-600 text-center">No metrics recorded</p>
+        {% endif %}
+      </div>
+
+    </div>
+
+    <!-- Right column: Plans + Workout logs -->
+    <div class="lg:col-span-2 space-y-5">
+
+      <!-- Active plan -->
+      {% if active_plan %}
+      <div class="bg-gray-800 rounded-xl overflow-hidden">
+        <div class="flex items-center justify-between px-5 py-3 border-b border-gray-700">
+          <p class="font-semibold text-white text-sm">Active Workout Plan</p>
+          <a href="{% url 'trainer:plan_review' active_plan.pk %}" class="text-xs text-accent hover:underline">View/Edit →</a>
+        </div>
+        <div class="px-5 py-4">
+          <div class="flex items-center gap-3 text-xs text-gray-400">
+            <span class="capitalize bg-gray-700 px-2 py-0.5 rounded">{{ active_plan.source }}</span>
+            <span>Created {{ active_plan.created_at|date:"d M Y" }}</span>
+            {% if active_plan.approved_at %}<span class="text-green-400">Approved {{ active_plan.approved_at|date:"d M" }}</span>{% endif %}
+          </div>
+          {% with weeks=active_plan.plan_data.weeks %}
+          {% if weeks %}
+          <p class="text-xs text-gray-500 mt-3">{{ weeks|length }} week(s) · {{ weeks.0.days|length }} training days/week</p>
+          {% endif %}
+          {% endwith %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Draft plans -->
+      {% if draft_plans %}
+      <div class="bg-gray-800 rounded-xl overflow-hidden">
+        <div class="px-5 py-3 border-b border-gray-700">
+          <p class="font-semibold text-white text-sm">Draft Plans</p>
+        </div>
+        <div class="divide-y divide-gray-700/50">
+          {% for plan in draft_plans %}
+          <div class="px-5 py-3 flex items-center justify-between">
+            <div class="text-xs">
+              <span class="text-gray-300 capitalize">{{ plan.source }} plan</span>
+              <span class="text-gray-600 ml-2">{{ plan.created_at|date:"d M Y" }}</span>
+            </div>
+            <a href="{% url 'trainer:plan_review' plan.pk %}"
+               class="text-xs accent-btn px-3 py-1 rounded-lg">Review & Approve</a>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Recent workout logs -->
+      <div class="bg-gray-800 rounded-xl overflow-hidden">
+        <div class="px-5 py-3 border-b border-gray-700">
+          <p class="font-semibold text-white text-sm">Recent Workouts</p>
+        </div>
+        {% if recent_logs %}
+        <div class="divide-y divide-gray-700/50">
+          {% for log in recent_logs %}
+          <div class="px-5 py-3">
+            <div class="flex items-center justify-between mb-1">
+              <p class="text-sm font-medium text-white">{{ log.workout_date|date:"D d M Y" }}</p>
+              <div class="flex items-center gap-3 text-xs text-gray-500">
+                {% if log.duration_minutes %}<span>{{ log.duration_minutes }} min</span>{% endif %}
+                <span class="capitalize bg-gray-700 px-2 py-0.5 rounded">{{ log.source }}</span>
+              </div>
+            </div>
+            <p class="text-xs text-gray-500">{{ log.exercise_count }} exercise{{ log.exercise_count|pluralize }} · {{ log.total_sets }} sets</p>
+            {% if log.notes %}<p class="text-xs text-gray-400 mt-1">{{ log.notes|truncatechars:80 }}</p>{% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p class="px-5 py-10 text-sm text-gray-600 text-center">No workouts logged yet</p>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

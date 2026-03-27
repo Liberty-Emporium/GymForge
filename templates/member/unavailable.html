@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Coming Soon — {{ profile.gym_name|default:"Your Gym" }}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root { --primary: {{ primary_color|default:"#1a1a2e" }}; --accent: {{ accent_color|default:"#e94560" }}; }
+    .hero-bg { background: linear-gradient(135deg, var(--primary) 0%, color-mix(in srgb, var(--primary) 60%, #000) 100%); }
+  </style>
+</head>
+<body class="min-h-screen hero-bg text-white flex flex-col items-center justify-center px-6 text-center">
+
+  <!-- Logo -->
+  {% if profile and profile.logo %}
+    <img src="{{ profile.logo.url }}" alt="{{ profile.gym_name }}" class="h-14 mx-auto mb-6 brightness-0 invert">
+  {% else %}
+    <h1 class="text-3xl font-bold mb-6">{{ profile.gym_name|default:"Your Gym" }}</h1>
+  {% endif %}
+
+  <div class="text-6xl mb-6">🔒</div>
+  <h2 class="text-2xl font-bold mb-3">Member App Coming Soon</h2>
+  <p class="text-white/70 max-w-sm mb-8 leading-relaxed">
+    The member app for <strong class="text-white">{{ profile.gym_name|default:"this gym" }}</strong> is not yet active.
+    Your account is ready — you will be notified as soon as access is enabled.
+  </p>
+
+  <div class="bg-white/10 backdrop-blur rounded-2xl px-8 py-6 max-w-xs w-full mb-6">
+    <p class="text-sm text-white/60 mb-1">Signed in as</p>
+    <p class="font-semibold">{{ request.user.get_full_name }}</p>
+    <p class="text-white/60 text-sm">{{ request.user.email }}</p>
+  </div>
+
+  {% if request.user.is_authenticated %}
+    <a href="{% url 'logout' %}" class="text-white/50 text-sm underline hover:text-white/80">Sign out</a>
+  {% endif %}
+
+</body>
+</html>

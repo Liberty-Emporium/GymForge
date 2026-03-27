@@ -1,0 +1,55 @@
+{% extends "base/trainer_base.html" %}
+{% block title %}Workout Plans{% endblock %}
+{% block page_title %}Workout Plans{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+  <div class="bg-gray-800 rounded-xl overflow-hidden">
+    {% if plans %}
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-gray-700 text-xs text-gray-500 uppercase tracking-wider">
+          <th class="text-left px-5 py-3 font-medium">Client</th>
+          <th class="text-left px-4 py-3 font-medium">Source</th>
+          <th class="text-left px-4 py-3 font-medium">Status</th>
+          <th class="text-left px-4 py-3 font-medium">Created</th>
+          <th class="px-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-700/50">
+        {% for plan in plans %}
+        <tr class="hover:bg-gray-700/20 transition-colors">
+          <td class="px-5 py-3 font-medium text-white">{{ plan.member.full_name }}</td>
+          <td class="px-4 py-3">
+            <span class="text-xs capitalize bg-gray-700 text-gray-300 px-2 py-0.5 rounded">{{ plan.source }}</span>
+          </td>
+          <td class="px-4 py-3">
+            <span class="text-xs capitalize px-2 py-0.5 rounded-full
+              {% if plan.status == 'active' %}bg-green-900/40 text-green-400
+              {% elif plan.status == 'draft' %}bg-yellow-900/40 text-yellow-400
+              {% elif plan.status == 'archived' %}bg-gray-700 text-gray-500
+              {% else %}bg-blue-900/40 text-blue-400{% endif %}">
+              {{ plan.status }}
+            </span>
+          </td>
+          <td class="px-4 py-3 text-gray-400 text-xs">{{ plan.created_at|date:"d M Y" }}</td>
+          <td class="px-4 py-3 text-right">
+            {% if plan.status == 'draft' %}
+            <a href="{% url 'trainer:plan_review' plan.pk %}" class="text-xs accent-btn px-3 py-1 rounded-lg">Review</a>
+            {% else %}
+            <a href="{% url 'trainer:plan_review' plan.pk %}" class="text-xs text-gray-400 hover:text-white">View</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="py-14 text-center">
+      <p class="text-gray-500 text-sm">No workout plans yet.</p>
+      <p class="text-gray-600 text-xs mt-1">Open a client and click "Generate AI Plan" to create one.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

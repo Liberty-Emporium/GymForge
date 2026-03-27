@@ -1,0 +1,65 @@
+<div id="lead-form-container">
+  <form hx-post="{% url 'landing:submit_lead' %}"
+        hx-target="#lead-form-container"
+        hx-swap="outerHTML"
+        class="space-y-4">
+    {% csrf_token %}
+
+    {% if errors.contact %}
+    <div class="rounded-lg bg-red-900/40 border border-red-700/50 px-4 py-3 text-sm text-red-300">
+      {{ errors.contact }}
+    </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label for="first_name" class="block text-sm font-medium text-gray-300 mb-1">First Name <span class="text-red-400">*</span></label>
+        <input type="text" id="first_name" name="first_name"
+               value="{{ post.first_name|default:'' }}"
+               class="w-full rounded-lg bg-gray-800 border {% if errors.first_name %}border-red-500{% else %}border-gray-700{% endif %} px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 text-sm"
+               style="--tw-ring-color: var(--accent)"
+               placeholder="Jane">
+        {% if errors.first_name %}
+        <p class="mt-1 text-xs text-red-400">{{ errors.first_name }}</p>
+        {% endif %}
+      </div>
+      <div>
+        <label for="last_name" class="block text-sm font-medium text-gray-300 mb-1">Last Name</label>
+        <input type="text" id="last_name" name="last_name"
+               value="{{ post.last_name|default:'' }}"
+               class="w-full rounded-lg bg-gray-800 border border-gray-700 px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 text-sm"
+               style="--tw-ring-color: var(--accent)"
+               placeholder="Smith">
+      </div>
+    </div>
+
+    <div>
+      <label for="email" class="block text-sm font-medium text-gray-300 mb-1">Email Address</label>
+      <input type="email" id="email" name="email"
+             value="{{ post.email|default:'' }}"
+             class="w-full rounded-lg bg-gray-800 border {% if errors.email %}border-red-500{% else %}border-gray-700{% endif %} px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 text-sm"
+             style="--tw-ring-color: var(--accent)"
+             placeholder="jane@example.com">
+      {% if errors.email %}
+      <p class="mt-1 text-xs text-red-400">{{ errors.email }}</p>
+      {% endif %}
+    </div>
+
+    <div>
+      <label for="phone" class="block text-sm font-medium text-gray-300 mb-1">Phone Number</label>
+      <input type="tel" id="phone" name="phone"
+             value="{{ post.phone|default:'' }}"
+             class="w-full rounded-lg bg-gray-800 border border-gray-700 px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:ring-2 text-sm"
+             style="--tw-ring-color: var(--accent)"
+             placeholder="+1 (555) 000-0000">
+      <p class="mt-1 text-xs text-gray-500">Provide email or phone — at least one is required.</p>
+    </div>
+
+    <button type="submit"
+            class="w-full py-3 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90 active:scale-[0.98]"
+            style="background-color: var(--accent)">
+      <span class="htmx-indicator hidden">Sending…</span>
+      <span>Send My Request</span>
+    </button>
+  </form>
+</div>

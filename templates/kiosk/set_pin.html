@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Set Kiosk PIN — {{ member.full_name }}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>body { background-color: #030712; }</style>
+</head>
+<body class="h-full flex items-center justify-center p-8">
+  <div class="w-full max-w-sm space-y-6 text-center">
+    <div>
+      <p class="text-2xl font-bold text-white">Set Kiosk PIN</p>
+      <p class="text-gray-400 text-sm mt-1">{{ member.full_name }}</p>
+    </div>
+    <form method="post" class="space-y-4">
+      {% csrf_token %}
+      <input type="password" name="pin" maxlength="4" minlength="4" pattern="\d{4}"
+             placeholder="4-digit PIN" autofocus required
+             class="w-full bg-gray-800 border border-gray-600 rounded-xl px-4 py-4 text-xl text-white text-center font-mono placeholder-gray-500 focus:outline-none focus:border-blue-500 transition-colors"
+             style="letter-spacing: 0.4em">
+      <button type="submit"
+              class="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-xl text-white font-bold transition-colors">
+        Set PIN
+      </button>
+    </form>
+    <a href="{% url 'front_desk:member_detail' member.pk %}"
+       class="block text-gray-500 text-sm hover:text-gray-300">Cancel</a>
+  </div>
+</body>
+</html>

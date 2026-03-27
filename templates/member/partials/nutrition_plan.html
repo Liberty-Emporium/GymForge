@@ -1,0 +1,18 @@
+{% comment %}
+Meal plan partial — replaces #nutrition-plan-container on regenerate.
+Also used as the initial render inside nutrition.html.
+
+Context: plan, meals (list of tuples: meal_type, label, icon, items)
+{% endcomment %}
+
+<div id="nutrition-plan-container" class="space-y-4">
+  {% for meal_type, meal_label, meal_icon, items in meals %}
+  {% include "member/partials/meal_section.html" with meal_type=meal_type meal_label=meal_label meal_icon=meal_icon items=items plan=plan %}
+  {% endfor %}
+
+  {% if not meals %}
+  <div class="text-center py-8">
+    <p class="text-gray-500 text-sm">No meal plan available — tap Regenerate to create one.</p>
+  </div>
+  {% endif %}
+</div>

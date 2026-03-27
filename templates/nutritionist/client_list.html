@@ -1,0 +1,76 @@
+{% extends "base/nutritionist_base.html" %}
+{% block title %}My Clients{% endblock %}
+{% block page_title %}My Clients{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Upcoming consultations strip -->
+  {% if upcoming_appointments %}
+  <div class="bg-gray-800 rounded-xl overflow-hidden">
+    <div class="px-5 py-3 border-b border-gray-700">
+      <p class="font-semibold text-white text-sm">Upcoming Consultations</p>
+    </div>
+    <div class="divide-y divide-gray-700/50">
+      {% for appt in upcoming_appointments %}
+      <div class="px-5 py-3 flex items-center justify-between text-sm">
+        <div>
+          <p class="font-medium text-white">{{ appt.member.full_name }}</p>
+          <p class="text-xs text-gray-500">{{ appt.scheduled_at|date:"D d M, g:i A" }}</p>
+        </div>
+        <a href="{% url 'nutritionist:appointment_log' appt.pk %}" class="text-xs text-accent hover:underline">Log →</a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Client cards -->
+  {% if client_data %}
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+    {% for cd in client_data %}
+    <a href="{% url 'nutritionist:client_detail' cd.member.pk %}"
+       class="bg-gray-800 rounded-xl p-5 hover:bg-gray-750 transition-colors block group">
+      <div class="flex items-start justify-between mb-3">
+        <div>
+          <p class="font-semibold text-white group-hover:text-accent transition-colors">{{ cd.member.full_name }}</p>
+          <p class="text-xs text-gray-500 mt-0.5">{{ cd.member.email }}</p>
+        </div>
+        {% if cd.latest_plan and cd.latest_plan.nutritionist_reviewed %}
+        <span class="text-xs bg-green-900/40 text-green-400 px-2 py-0.5 rounded-full">Plan Reviewed</span>
+        {% elif cd.latest_plan %}
+        <span class="text-xs bg-yellow-900/40 text-yellow-400 px-2 py-0.5 rounded-full">Plan Pending</span>
+        {% else %}
+        <span class="text-xs bg-gray-700 text-gray-500 px-2 py-0.5 rounded-full">No Plan</span>
+        {% endif %}
+      </div>
+      <div class="grid grid-cols-3 gap-3 text-xs">
+        <div>
+          <p class="text-gray-500">Diet</p>
+          <p class="text-gray-300 mt-0.5 capitalize">{{ cd.dietary_preference }}</p>
+        </div>
+        <div>
+          <p class="text-gray-500">Last Plan</p>
+          <p class="text-gray-300 mt-0.5">
+            {% if cd.latest_plan %}{{ cd.latest_plan.generated_at|date:"d M" }}{% else %}—{% endif %}
+          </p>
+        </div>
+        <div>
+          <p class="text-gray-500">Next Consult</p>
+          <p class="text-gray-300 mt-0.5">
+            {% if cd.next_appointment %}{{ cd.next_appointment.scheduled_at|date:"D d M" }}{% else %}—{% endif %}
+          </p>
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="bg-gray-800 rounded-xl py-16 text-center">
+    <p class="text-gray-500 text-sm">No clients assigned to you yet.</p>
+    <p class="text-gray-600 text-xs mt-1">Ask your manager to assign members via ClientAssignment.</p>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

@@ -1,0 +1,77 @@
+{% extends "base/member_base.html" %}
+{% block title %}Loyalty{% endblock %}
+
+{% block content %}
+<div class="space-y-5 pb-24">
+
+  <div class="flex items-center justify-between">
+    <h1 class="text-xl font-bold text-white">Loyalty</h1>
+    <a href="{% url 'loyalty:rewards' %}" class="accent-btn px-4 py-2 rounded-xl text-sm font-semibold">Rewards</a>
+  </div>
+
+  <!-- Points hero -->
+  <div class="accent-btn rounded-3xl p-6 text-center">
+    <p class="text-6xl font-black text-white">{{ member.loyalty_points }}</p>
+    <p class="text-white/80 text-base mt-1">Total Points</p>
+  </div>
+
+  <!-- Stats grid -->
+  <div class="grid grid-cols-3 gap-3">
+    <div class="bg-gray-800 rounded-2xl p-4 text-center">
+      <p class="text-2xl font-black text-green-400">+{{ earned_this_month }}</p>
+      <p class="text-xs text-gray-500 mt-0.5">Earned this month</p>
+    </div>
+    <div class="bg-gray-800 rounded-2xl p-4 text-center">
+      <p class="text-2xl font-black text-red-400">-{{ redeemed_this_month }}</p>
+      <p class="text-xs text-gray-500 mt-0.5">Redeemed this month</p>
+    </div>
+    <div class="bg-gray-800 rounded-2xl p-4 text-center">
+      <p class="text-2xl font-black text-white">{{ streak }}</p>
+      <p class="text-xs text-gray-500 mt-0.5">Day streak 🔥</p>
+    </div>
+  </div>
+
+  <!-- Quick nav -->
+  <div class="grid grid-cols-3 gap-3">
+    <a href="{% url 'loyalty:transactions' %}"
+       class="bg-gray-800 rounded-2xl p-4 text-center hover:bg-gray-700 transition-colors">
+      <p class="text-2xl mb-1">📋</p>
+      <p class="text-xs text-gray-300 font-medium">History</p>
+    </a>
+    <a href="{% url 'loyalty:badges' %}"
+       class="bg-gray-800 rounded-2xl p-4 text-center hover:bg-gray-700 transition-colors">
+      <p class="text-2xl mb-1">🏅</p>
+      <p class="text-xs text-gray-300 font-medium">Badges ({{ badge_count }})</p>
+    </a>
+    <a href="{% url 'loyalty:rewards' %}"
+       class="bg-gray-800 rounded-2xl p-4 text-center hover:bg-gray-700 transition-colors">
+      <p class="text-2xl mb-1">🎁</p>
+      <p class="text-xs text-gray-300 font-medium">Rewards</p>
+    </a>
+  </div>
+
+  <!-- Recent transactions -->
+  {% if recent_transactions %}
+  <div class="bg-gray-800 rounded-2xl overflow-hidden">
+    <div class="flex items-center justify-between px-5 py-3 border-b border-gray-700">
+      <p class="font-semibold text-white text-sm">Recent Activity</p>
+      <a href="{% url 'loyalty:transactions' %}" class="text-xs accent-text hover:underline">All →</a>
+    </div>
+    <div class="divide-y divide-gray-700/50">
+      {% for tx in recent_transactions %}
+      <div class="px-5 py-3 flex items-center justify-between">
+        <div>
+          <p class="text-sm text-white">{{ tx.description|default:tx.get_transaction_type_display }}</p>
+          <p class="text-xs text-gray-500">{{ tx.created_at|date:"d M Y, g:i A" }}</p>
+        </div>
+        <p class="font-bold text-sm {% if tx.points > 0 %}text-green-400{% else %}text-red-400{% endif %}">
+          {% if tx.points > 0 %}+{% endif %}{{ tx.points }}
+        </p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

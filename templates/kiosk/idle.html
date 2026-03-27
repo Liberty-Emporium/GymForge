@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ gym_name|default:"GymForge" }} — Check In</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root { --primary: {{ primary_color|default:"#1a1a2e" }}; --accent: {{ accent_color|default:"#e94560" }}; }
+    body { background-color: var(--primary); }
+    .accent-bg { background-color: var(--accent); }
+    .accent-text { color: var(--accent); }
+    .accent-border { border-color: var(--accent); }
+    @keyframes pulse-slow { 0%,100%{opacity:1} 50%{opacity:0.5} }
+    .pulse-slow { animation: pulse-slow 2.5s ease-in-out infinite; }
+    @keyframes scale-in { from{transform:scale(0.95);opacity:0} to{transform:scale(1);opacity:1} }
+    .scale-in { animation: scale-in 0.4s ease-out forwards; }
+  </style>
+</head>
+<body class="h-full flex flex-col items-center justify-between select-none overflow-hidden">
+
+  <!-- Top bar -->
+  <div class="w-full flex items-center justify-between px-8 pt-8">
+    {% if gym_logo_url %}
+    <img src="{{ gym_logo_url }}" alt="{{ gym_name }}" class="h-12 object-contain">
+    {% else %}
+    <div class="accent-bg w-12 h-12 rounded-xl flex items-center justify-center font-black text-white text-xl">
+      {{ gym_name|first|upper|default:"G" }}
+    </div>
+    {% endif %}
+    <p class="text-white/40 text-sm font-medium">{{ gym_name }}</p>
+  </div>
+
+  <!-- Centre — logo + prompt -->
+  <div class="flex flex-col items-center gap-8 scale-in">
+    <div class="text-center">
+      <h1 class="text-6xl font-black text-white mb-4">Check In</h1>
+      <p class="text-2xl text-white/60 pulse-slow">Tap your card or enter your PIN</p>
+    </div>
+
+    <!-- Main action buttons -->
+    <div class="flex flex-col items-center gap-4 w-full max-w-sm">
+
+      <!-- Card number entry toggle -->
+      <button onclick="document.getElementById('card-panel').classList.toggle('hidden')"
+              class="accent-bg w-full py-6 rounded-3xl text-white font-bold text-xl shadow-2xl hover:brightness-110 transition-all">
+        Enter Card Number
+      </button>
+
+      <!-- PIN entry toggle -->
+      <button onclick="document.getElementById('pin-panel').classList.toggle('hidden')"
+              class="w-full py-5 rounded-3xl border-2 accent-border text-white font-bold text-lg hover:bg-white/5 transition-all">
+        Enter PIN
+      </button>
+
+      <!-- Guest -->
+      <form method="post" action="{% url 'kiosk:guest_checkin' %}">
+        {% csrf_token %}
+        <button type="submit"
+                class="text-white/40 text-sm hover:text-white/70 transition-colors mt-2">
+          Guest Visit
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Card entry panel -->
+  <div id="card-panel" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-10"
+       onclick="if(event.target===this) this.classList.add('hidden')">
+    <div class="bg-gray-900 rounded-3xl p-8 w-full max-w-md shadow-2xl" onclick="event.stopPropagation()">
+      <h2 class="text-2xl font-bold text-white text-center mb-6">Card Number</h2>
+      <form method="post" action="{% url 'kiosk:card_checkin' %}">
+        {% csrf_token %}
+        <!-- RFID reader auto-submit: auto-focus, submits on Enter -->
+        <input type="text" name="card_number" id="rfid-input"
+               autofocus autocomplete="off" placeholder="GF-00000"
+               class="w-full bg-gray-800 border-2 border-gray-700 rounded-2xl px-6 py-5 text-3xl text-white text-center font-mono focus:outline-none focus:border-accent uppercase mb-6"
+               style="border-color: var(--accent)"
+               oninput="this.value=this.value.toUpperCase()">
+
+        <!-- On-screen numeric keypad -->
+        <div id="numpad" class="grid grid-cols-3 gap-3 mb-6">
+          {% for digit in "1,2,3,4,5,6,7,8,9" %}
+          {% with d=digit %}
+          <button type="button" onclick="kPad('{{ d }}')"
+                  class="bg-gray-800 hover:bg-gray-700 text-white font-bold text-2xl py-5 rounded-2xl transition-colors">
+            {{ d }}
+          </button>
+          {% endwith %}
+          {% endfor %}
+          <button type="button" onclick="kPad('0')"
+                  class="bg-gray-800 hover:bg-gray-700 text-white font-bold text-2xl py-5 rounded-2xl transition-colors col-start-2">
+            0
+          </button>
+        </div>
+
+        <!-- GF- prefix row -->
+        <div class="grid grid-cols-3 gap-3 mb-6">
+          <button type="button" onclick="kDash()"
+                  class="bg-gray-700 hover:bg-gray-600 text-white font-bold text-xl py-4 rounded-2xl transition-colors">
+            GF-
+          </button>
+          <button type="button" onclick="kClear()"
+                  class="bg-gray-700 hover:bg-gray-600 text-white font-bold text-xl py-4 rounded-2xl transition-colors">
+            Clear
+          </button>
+          <button type="button" onclick="kBack()"
+                  class="bg-gray-700 hover:bg-gray-600 text-white font-bold text-xl py-4 rounded-2xl transition-colors">
+            ⌫
+          </button>
+        </div>
+
+        <button type="submit"
+                class="accent-bg w-full py-5 rounded-2xl text-white font-bold text-xl">
+          Check In →
+        </button>
+      </form>
+      <button onclick="document.getElementById('card-panel').classList.add('hidden')"
+              class="mt-4 w-full text-center text-white/40 text-sm hover:text-white/70">
+        Cancel
+      </button>
+    </div>
+  </div>
+
+  <!-- PIN panel -->
+  <div id="pin-panel" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center z-10"
+       onclick="if(event.target===this) this.classList.add('hidden')">
+    <div class="bg-gray-900 rounded-3xl p-8 w-full max-w-sm shadow-2xl" onclick="event.stopPropagation()">
+      <h2 class="text-2xl font-bold text-white text-center mb-6">Enter PIN</h2>
+      <form method="post" action="{% url 'kiosk:pin_checkin' %}">
+        {% csrf_token %}
+        <!-- Hidden PIN input filled by keypad -->
+        <input type="password" name="pin" id="pin-input" readonly maxlength="4"
+               class="w-full bg-gray-800 border-2 rounded-2xl px-6 py-5 text-4xl text-white text-center font-mono mb-6 focus:outline-none"
+               style="border-color: var(--accent); letter-spacing: 0.5em">
+        <!-- PIN keypad -->
+        <div class="grid grid-cols-3 gap-3 mb-4">
+          {% for d in "1,2,3,4,5,6,7,8,9" %}
+          <button type="button" onclick="pinPad('{{ d }}')"
+                  class="bg-gray-800 hover:bg-gray-700 text-white font-bold text-2xl py-5 rounded-2xl transition-colors">
+            {{ d }}
+          </button>
+          {% endfor %}
+          <button type="button" onclick="pinBack()"
+                  class="bg-gray-700 hover:bg-gray-600 text-white font-bold text-xl py-5 rounded-2xl transition-colors">⌫</button>
+          <button type="button" onclick="pinPad('0')"
+                  class="bg-gray-800 hover:bg-gray-700 text-white font-bold text-2xl py-5 rounded-2xl transition-colors">0</button>
+          <button type="button" onclick="pinClear()"
+                  class="bg-gray-700 hover:bg-gray-600 text-white font-bold text-sm py-5 rounded-2xl transition-colors">Clear</button>
+        </div>
+        <button type="submit" id="pin-submit"
+                class="accent-bg w-full py-5 rounded-2xl text-white font-bold text-xl opacity-40 cursor-not-allowed"
+                disabled>
+          Check In →
+        </button>
+      </form>
+      <button onclick="document.getElementById('pin-panel').classList.add('hidden')"
+              class="mt-4 w-full text-center text-white/40 text-sm hover:text-white/70">
+        Cancel
+      </button>
+    </div>
+  </div>
+
+  <!-- Bottom — date/time -->
+  <div class="pb-8 text-white/30 text-sm" id="clock"></div>
+
+  <script>
+    // Clock
+    function tick() {
+      const now = new Date();
+      document.getElementById('clock').textContent =
+        now.toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'long'}) +
+        ' · ' + now.toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit'});
+    }
+    tick(); setInterval(tick, 1000);
+
+    // Card numpad
+    function kPad(d) {
+      const el = document.getElementById('rfid-input');
+      el.value += d; el.focus();
+    }
+    function kDash() {
+      const el = document.getElementById('rfid-input');
+      if (!el.value) el.value = 'GF-';
+      el.focus();
+    }
+    function kClear() { document.getElementById('rfid-input').value = ''; }
+    function kBack() {
+      const el = document.getElementById('rfid-input');
+      el.value = el.value.slice(0,-1);
+    }
+
+    // RFID auto-submit on Enter
+    document.getElementById('rfid-input').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') this.closest('form').submit();
+    });
+
+    // PIN keypad
+    function pinPad(d) {
+      const el = document.getElementById('pin-input');
+      if (el.value.length < 4) {
+        el.value += d;
+        updatePinSubmit();
+      }
+    }
+    function pinBack() {
+      const el = document.getElementById('pin-input');
+      el.value = el.value.slice(0,-1);
+      updatePinSubmit();
+    }
+    function pinClear() {
+      document.getElementById('pin-input').value = '';
+      updatePinSubmit();
+    }
+    function updatePinSubmit() {
+      const len = document.getElementById('pin-input').value.length;
+      const btn = document.getElementById('pin-submit');
+      btn.disabled = len < 4;
+      btn.classList.toggle('opacity-40', len < 4);
+      btn.classList.toggle('cursor-not-allowed', len < 4);
+      if (len === 4) btn.closest('form').submit();  // auto-submit on 4 digits
+    }
+  </script>
+
+</body>
+</html>

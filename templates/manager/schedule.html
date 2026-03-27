@@ -1,0 +1,97 @@
+{% extends "base/manager_base.html" %}
+{% block title %}Schedule{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-xl font-bold text-white">Class Schedule</h1>
+      <p class="text-sm text-gray-500">{{ location.name }}</p>
+    </div>
+    <a href="{% url 'manager:class_session_create' %}"
+       class="accent-btn px-4 py-2 rounded-lg text-sm font-semibold">+ New Session</a>
+  </div>
+
+  <!-- Week nav -->
+  <div class="flex items-center gap-4">
+    <a href="?week={{ prev_week }}"
+       class="px-3 py-1.5 rounded-lg border border-gray-600 text-sm text-gray-300 hover:border-gray-400 transition-colors">← Prev</a>
+    <p class="text-sm font-semibold text-white">{{ week_start|date:"d M" }} – {{ week_end|date:"d M Y" }}</p>
+    <a href="?week={{ next_week }}"
+       class="px-3 py-1.5 rounded-lg border border-gray-600 text-sm text-gray-300 hover:border-gray-400 transition-colors">Next →</a>
+    {% if week_offset != 0 %}
+    <a href="?week=0" class="text-xs text-accent hover:underline">This week</a>
+    {% endif %}
+  </div>
+
+  <!-- Sessions table -->
+  <div class="bg-gray-800 rounded-xl overflow-hidden">
+    {% if sessions %}
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-gray-700 text-xs text-gray-500 uppercase tracking-wider">
+          <th class="text-left px-5 py-3 font-medium">Date &amp; Time</th>
+          <th class="text-left px-4 py-3 font-medium">Class</th>
+          <th class="text-left px-4 py-3 font-medium">Trainer</th>
+          <th class="text-left px-4 py-3 font-medium">Capacity</th>
+          <th class="text-left px-4 py-3 font-medium">Status</th>
+          <th class="px-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-700/50">
+        {% for s in sessions %}
+        <tr class="hover:bg-gray-700/20 transition-colors {% if s.is_cancelled %}opacity-50{% endif %}">
+          <td class="px-5 py-3">
+            <p class="font-semibold text-white">{{ s.start_datetime|date:"D d M" }}</p>
+            <p class="text-xs text-gray-500">{{ s.start_datetime|date:"g:i A" }} – {{ s.end_datetime|date:"g:i A" }}</p>
+          </td>
+          <td class="px-4 py-3 font-medium text-white">{{ s.class_type.name }}</td>
+          <td class="px-4 py-3 text-gray-300 text-sm">
+            {{ s.trainer.get_full_name|default:"—" }}
+          </td>
+          <td class="px-4 py-3 text-xs">
+            <span class="{% if s.is_full %}text-red-400{% else %}text-gray-300{% endif %}">
+              {{ s.confirmed_count }}/{{ s.capacity }}
+            </span>
+            {% if s.waitlist_count > 0 %}
+            <span class="text-yellow-400 ml-1">(+{{ s.waitlist_count }} waitlist)</span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-3">
+            {% if s.is_cancelled %}
+            <span class="text-xs bg-red-900/40 text-red-400 px-2 py-0.5 rounded-full">Cancelled</span>
+            {% elif s.start_datetime.date < today %}
+            <span class="text-xs bg-gray-700 text-gray-500 px-2 py-0.5 rounded-full">Past</span>
+            {% else %}
+            <span class="text-xs bg-green-900/40 text-green-400 px-2 py-0.5 rounded-full">Scheduled</span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-3 text-right">
+            {% if not s.is_cancelled %}
+            <div class="flex justify-end gap-2">
+              <a href="{% url 'manager:class_session_edit' s.pk %}"
+                 class="text-xs text-gray-400 hover:text-white transition-colors">Edit</a>
+              <form method="post" action="{% url 'manager:class_session_cancel' s.pk %}"
+                    onsubmit="return confirm('Cancel this session?')">
+                {% csrf_token %}
+                <input type="hidden" name="cancellation_reason" value="Cancelled by manager">
+                <button type="submit" class="text-xs text-red-400 hover:text-red-300 transition-colors">Cancel</button>
+              </form>
+            </div>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="py-12 text-center">
+      <p class="text-gray-500 text-sm">No sessions this week</p>
+      <a href="{% url 'manager:class_session_create' %}" class="inline-block mt-4 accent-btn px-5 py-2 rounded-lg text-sm font-semibold">
+        Schedule a Class
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

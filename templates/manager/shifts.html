@@ -1,0 +1,113 @@
+{% extends "base/manager_base.html" %}
+{% block title %}Staff Shifts{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-xl font-bold text-white">Staff Shifts</h1>
+      <p class="text-sm text-gray-500">{{ location.name }} · {{ today|date:"d M Y" }}</p>
+    </div>
+  </div>
+
+  <!-- Today's Shifts -->
+  <div class="bg-gray-800 rounded-xl overflow-hidden">
+    <div class="px-5 py-3 border-b border-gray-700">
+      <p class="font-semibold text-white text-sm">Today's Shifts</p>
+    </div>
+    {% if today_shifts %}
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-gray-700 text-xs text-gray-500 uppercase tracking-wider">
+          <th class="text-left px-5 py-3 font-medium">Staff</th>
+          <th class="text-left px-4 py-3 font-medium">Role</th>
+          <th class="text-left px-4 py-3 font-medium">Hours</th>
+          <th class="text-left px-4 py-3 font-medium">Attendance</th>
+          <th class="px-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-700/50">
+        {% for shift in today_shifts %}
+        <tr class="hover:bg-gray-700/20 transition-colors">
+          <td class="px-5 py-3">
+            <p class="font-semibold text-white">{{ shift.staff.get_full_name }}</p>
+            <p class="text-xs text-gray-500">{{ shift.staff.email }}</p>
+          </td>
+          <td class="px-4 py-3 text-gray-300 text-xs capitalize">{{ shift.staff.get_role_display }}</td>
+          <td class="px-4 py-3 text-gray-300 text-xs">
+            {{ shift.start_time|time:"g:i A" }} – {{ shift.end_time|time:"g:i A" }}
+          </td>
+          <td class="px-4 py-3">
+            {% if shift.attended == True %}
+            <span class="text-xs bg-green-900/40 text-green-400 px-2 py-0.5 rounded-full">Attended</span>
+            {% elif shift.attended == False %}
+            <span class="text-xs bg-red-900/40 text-red-400 px-2 py-0.5 rounded-full">Absent</span>
+            {% else %}
+            <span class="text-xs bg-gray-700 text-gray-400 px-2 py-0.5 rounded-full">Pending</span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-3 text-right">
+            <div class="flex justify-end gap-2">
+              <form method="post" action="{% url 'manager:shift_attendance' shift.pk %}">
+                {% csrf_token %}
+                <input type="hidden" name="attended" value="true">
+                <button type="submit" class="text-xs text-green-400 hover:text-green-300 transition-colors">✓ Present</button>
+              </form>
+              <form method="post" action="{% url 'manager:shift_attendance' shift.pk %}">
+                {% csrf_token %}
+                <input type="hidden" name="attended" value="false">
+                <button type="submit" class="text-xs text-red-400 hover:text-red-300 transition-colors">✗ Absent</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="px-5 py-10 text-sm text-gray-600 text-center">No shifts scheduled today</p>
+    {% endif %}
+  </div>
+
+  <!-- This Week's Shifts -->
+  <div class="bg-gray-800 rounded-xl overflow-hidden">
+    <div class="px-5 py-3 border-b border-gray-700">
+      <p class="font-semibold text-white text-sm">This Week</p>
+    </div>
+    {% if week_shifts %}
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-gray-700 text-xs text-gray-500 uppercase tracking-wider">
+          <th class="text-left px-5 py-3 font-medium">Staff</th>
+          <th class="text-left px-4 py-3 font-medium">Date</th>
+          <th class="text-left px-4 py-3 font-medium">Hours</th>
+          <th class="text-left px-4 py-3 font-medium">Attendance</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-700/50">
+        {% for shift in week_shifts %}
+        <tr class="hover:bg-gray-700/20 transition-colors">
+          <td class="px-5 py-3 font-medium text-white">{{ shift.staff.get_full_name }}</td>
+          <td class="px-4 py-3 text-gray-300 text-xs">{{ shift.date|date:"D d M" }}</td>
+          <td class="px-4 py-3 text-gray-300 text-xs">
+            {{ shift.start_time|time:"g:i A" }} – {{ shift.end_time|time:"g:i A" }}
+          </td>
+          <td class="px-4 py-3">
+            {% if shift.attended == True %}
+            <span class="text-xs bg-green-900/40 text-green-400 px-2 py-0.5 rounded-full">Attended</span>
+            {% elif shift.attended == False %}
+            <span class="text-xs bg-red-900/40 text-red-400 px-2 py-0.5 rounded-full">Absent</span>
+            {% else %}
+            <span class="text-xs bg-gray-700 text-gray-400 px-2 py-0.5 rounded-full">Pending</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="px-5 py-10 text-sm text-gray-600 text-center">No shifts this week</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

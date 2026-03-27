@@ -1,0 +1,76 @@
+{% extends "base/owner_base.html" %}
+{% block title %}Pay Rates{% endblock %}
+{% block page_title %}Pay Rates{% endblock %}
+
+{% block header_actions %}
+<div class="flex items-center gap-3">
+  <a href="{% url 'payroll:period_list' %}" class="px-4 py-2 rounded-lg text-sm font-semibold bg-gray-700 text-gray-300 hover:bg-gray-600 transition-colors">← Periods</a>
+  <a href="{% url 'payroll:rate_create' %}" class="accent-btn px-4 py-2 rounded-lg text-sm font-semibold">+ New Rate</a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-5">
+
+  {% if messages %}
+  <div class="space-y-2">
+    {% for message in messages %}
+    <div class="{% if message.tags == 'error' %}bg-red-900/20 border border-red-700/30{% else %}bg-green-900/20 border border-green-700/30{% endif %} rounded-xl px-4 py-3">
+      <p class="text-sm {% if message.tags == 'error' %}text-red-400{% else %}text-green-400{% endif %}">{{ message }}</p>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="bg-gray-800 rounded-xl overflow-hidden">
+    {% if rates %}
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-gray-700 text-xs text-gray-500 uppercase tracking-wider">
+          <th class="text-left px-5 py-3 font-medium">Staff Member</th>
+          <th class="text-left px-5 py-3 font-medium">Pay Type</th>
+          <th class="text-left px-5 py-3 font-medium">Rate</th>
+          <th class="text-left px-5 py-3 font-medium">Effective From</th>
+          <th class="text-left px-5 py-3 font-medium">Status</th>
+          <th class="px-5 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-700/50">
+        {% for rate in rates %}
+        <tr class="hover:bg-gray-700/20 transition-colors {% if not rate.is_current %}opacity-50{% endif %}">
+          <td class="px-5 py-3">
+            <p class="text-white font-medium">{{ rate.staff.get_full_name }}</p>
+            <p class="text-xs text-gray-500">{{ rate.staff.role|capfirst }}</p>
+          </td>
+          <td class="px-5 py-3 text-gray-300">{{ rate.get_pay_type_display }}</td>
+          <td class="px-5 py-3 font-semibold text-white">${{ rate.rate }}</td>
+          <td class="px-5 py-3 text-gray-300">{{ rate.effective_from|date:"d M Y" }}</td>
+          <td class="px-5 py-3">
+            {% if rate.effective_to %}
+            <span class="text-xs px-2 py-0.5 rounded-full bg-gray-700 text-gray-400">
+              Ended {{ rate.effective_to|date:"d M Y" }}
+            </span>
+            {% else %}
+            <span class="text-xs px-2 py-0.5 rounded-full bg-green-900/40 text-green-400">Active</span>
+            {% endif %}
+          </td>
+          <td class="px-5 py-3 text-right">
+            <div class="flex items-center justify-end gap-3">
+              <a href="{% url 'payroll:rate_edit' rate.pk %}" class="text-xs accent-text hover:underline">Edit</a>
+              <a href="{% url 'payroll:rate_history' rate.staff.pk %}" class="text-xs text-gray-400 hover:text-white transition-colors">History</a>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="py-14 text-center">
+      <p class="text-gray-500 text-sm">No pay rates configured.</p>
+      <a href="{% url 'payroll:rate_create' %}" class="inline-block mt-4 accent-btn px-5 py-2.5 rounded-lg text-sm font-semibold">Create First Rate</a>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

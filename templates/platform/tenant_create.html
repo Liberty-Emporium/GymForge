@@ -1,0 +1,79 @@
+{% extends "platform/base.html" %}
+{% block title %}New Gym{% endblock %}
+{% block page_title %}New Gym{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl">
+  <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+    <form method="post" class="space-y-5">
+      {% csrf_token %}
+
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-1">Gym Name</label>
+        <input type="text" name="gym_name" value="{{ form.gym_name.value|default:'' }}" required
+               class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand">
+        {% if form.gym_name.errors %}
+        <p class="mt-1 text-xs text-red-400">{{ form.gym_name.errors.0 }}</p>
+        {% endif %}
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-1">Schema Name <span class="text-gray-500 font-normal">(subdomain slug, no spaces)</span></label>
+        <input type="text" name="schema_name" value="{{ form.schema_name.value|default:'' }}" required
+               pattern="[a-z0-9_]+" title="Lowercase letters, numbers, underscores only"
+               class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand"
+               placeholder="e.g. ironclad_gym">
+        {% if form.schema_name.errors %}
+        <p class="mt-1 text-xs text-red-400">{{ form.schema_name.errors.0 }}</p>
+        {% endif %}
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-1">Owner Email</label>
+        <input type="email" name="owner_email" value="{{ form.owner_email.value|default:'' }}" required
+               class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-brand">
+        {% if form.owner_email.errors %}
+        <p class="mt-1 text-xs text-red-400">{{ form.owner_email.errors.0 }}</p>
+        {% endif %}
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-1">Plan</label>
+        <select name="plan"
+                class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand">
+          <option value="">— No plan —</option>
+          {% for plan in plans %}
+          <option value="{{ plan.pk }}" {% if form.plan.value|stringformat:"s" == plan.pk|stringformat:"s" %}selected{% endif %}>
+            {{ plan.name }} (${{ plan.price_monthly }}/mo)
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-1">Status</label>
+        <select name="subscription_status"
+                class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand">
+          {% for val, label in status_choices %}
+          <option value="{{ val }}" {% if val == form.subscription_status.value|default:'trial' %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-1">Trial Ends</label>
+        <input type="date" name="trial_ends_at" value="{{ form.trial_ends_at.value|default:'' }}"
+               class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand">
+      </div>
+
+      <div class="flex items-center justify-between pt-2">
+        <a href="{% url 'platform_admin:tenant_list' %}" class="text-sm text-gray-400 hover:text-white transition-colors">Cancel</a>
+        <button type="submit"
+                class="px-5 py-2 bg-brand hover:bg-brand-dark text-white text-sm font-medium rounded-lg transition-colors">
+          Provision Gym
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
