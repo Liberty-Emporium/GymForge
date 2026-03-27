@@ -31,6 +31,12 @@ def landing_page(request):
             'profile': None,
             'active_sections': [],
         })
+    except Exception:
+        # Public schema (no tenant matched) — core_gymprofile table doesn't exist here
+        return render(request, 'landing/landing.html', {
+            'profile': None,
+            'active_sections': [],
+        })
 
     if not profile.landing_page_active:
         return render(request, 'landing/coming_soon.html', {'profile': profile})
