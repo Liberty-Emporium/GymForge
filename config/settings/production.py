@@ -6,7 +6,7 @@ import os
 import dj_database_url
 from decouple import config
 
-DEBUG = False
+DEBUG = os.environ.get('DJANGO_DEBUG', '') == 'True'
 
 ALLOWED_HOSTS = [
     '.gymforge.com',
