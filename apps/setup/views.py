@@ -99,6 +99,18 @@ def _save(request, key, value):
     request.session.modified = True
 
 
+def _identity_ctx(wizard):
+    """Return identity dict with all keys guaranteed present (avoids VariableDoesNotExist in templates)."""
+    raw = wizard.get('identity') or {}
+    return {
+        'gym_name':      raw.get('gym_name', ''),
+        'tagline':       raw.get('tagline', ''),
+        'primary_color': raw.get('primary_color', '#1a1a2e'),
+        'accent_color':  raw.get('accent_color', '#e94560'),
+        'logo_path':     raw.get('logo_path', ''),
+    }
+
+
 def _generate_schema_name(gym_name):
     """
     Derive a unique PostgreSQL schema name from the gym name.
@@ -226,11 +238,14 @@ def step1(request):
         return render(request, 'owner/step1_identity.html', {
             'step': 1, 'wizard': wizard, 'errors': errors,
             'post': request.POST,
+            'identity': _identity_ctx(wizard),
         })
 
     return render(request, 'owner/step1_identity.html', {
         'step': 1, 'wizard': wizard,
-        'identity': wizard.get('identity', {}),
+        'identity': _identity_ctx(wizard),
+        'post': {},
+        'errors': {},
     })
 
 
