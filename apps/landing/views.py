@@ -23,16 +23,22 @@ def landing_page(request):
     """
     from apps.core.models import GymProfile, Service, Location
 
+    # Guard: public schema has no tenant tables — return immediately without
+    # touching the DB or rendering any template that triggers context processors.
+    tenant = getattr(request, 'tenant', None)
+    if tenant is None:
+        return HttpResponse(status=200)
+    try:
+        from django_tenants.utils import get_public_schema_name
+        if tenant.schema_name == get_public_schema_name():
+            return HttpResponse(status=200)
+    except Exception:
+        return HttpResponse(status=200)
+
     try:
         profile = GymProfile.objects.get()
     except GymProfile.DoesNotExist:
         # Tenant exists but provisioning hasn't completed yet
-        return render(request, 'landing/landing.html', {
-            'profile': None,
-            'active_sections': [],
-        })
-    except Exception:
-        # Public schema (no tenant matched) — core_gymprofile table doesn't exist here
         return render(request, 'landing/landing.html', {
             'profile': None,
             'active_sections': [],
