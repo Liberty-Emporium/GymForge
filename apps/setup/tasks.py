@@ -78,7 +78,10 @@ def provision_gym(self, wizard_data: dict) -> dict:
     owner_email       = owner_data.get('email', '')
 
     def _progress(step_num, label):
-        self.update_state(state='PROGRESS', meta={'step_num': step_num, 'step': label})
+        try:
+            self.update_state(state='PROGRESS', meta={'step_num': step_num, 'step': label})
+        except Exception:
+            pass  # Redis unavailable — ignore progress updates, provisioning continues
 
     # ------------------------------------------------------------------
     # Step 1 — Validate schema name uniqueness (final check)
