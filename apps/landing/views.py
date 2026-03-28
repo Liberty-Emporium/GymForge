@@ -23,17 +23,24 @@ def landing_page(request):
     """
     from apps.core.models import GymProfile, Service, Location
 
-    # Guard: public schema has no tenant tables — return immediately without
-    # touching the DB or rendering any template that triggers context processors.
+    # Guard: public schema has no tenant tables — serve GymForge marketing page.
+    import os
     tenant = getattr(request, 'tenant', None)
     if tenant is None:
-        return redirect('/setup/')
+        return render(request, 'landing/gymforge_home.html')
     try:
         from django_tenants.utils import get_public_schema_name
-        if tenant.schema_name == get_public_schema_name():
-            return redirect('/setup/')
+        is_public = tenant.schema_name == get_public_schema_name()
     except Exception:
-        return redirect('/setup/')
+        is_public = True
+
+    # Also show marketing page when the request host is the Railway platform domain
+    railway_domain = os.environ.get('RAILWAY_PUBLIC_DOMAIN', '')
+    host = request.get_host().split(':')[0]
+    is_platform_host = railway_domain and host == railway_domain
+
+    if is_public or is_platform_host:
+        return render(request, 'landing/gymforge_home.html')
 
     try:
         profile = GymProfile.objects.get()
