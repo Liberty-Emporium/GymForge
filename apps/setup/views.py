@@ -639,3 +639,36 @@ def repair_domains(request):
 
     body = '\n'.join(results) or 'No tenants found.'
     return HttpResponse(body, content_type='text/plain')
+
+
+# ---------------------------------------------------------------------------
+# Create platform admin — one-time bootstrap utility
+# ---------------------------------------------------------------------------
+
+def create_platform_admin(request):
+    """
+    Creates a platform_admin user for the GymForge owner.
+    Safe to call multiple times — returns 409 if the user already exists.
+    """
+    from apps.accounts.models import User
+    email = 'admin@gymforge.com'
+    if User.objects.filter(email__iexact=email).exists():
+        return HttpResponse(
+            f'EXISTS: {email} already has an account. Log in at /auth/login/',
+            content_type='text/plain',
+            status=409,
+        )
+    User.objects.create_user(
+        username=email,
+        email=email,
+        password='GymForge2026!',
+        first_name='Platform',
+        last_name='Admin',
+        role='platform_admin',
+        is_active=True,
+        is_staff=True,
+    )
+    return HttpResponse(
+        f'CREATED: {email} / GymForge2026! — log in at /auth/login/',
+        content_type='text/plain',
+    )
