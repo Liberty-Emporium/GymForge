@@ -50,7 +50,7 @@
     <p class="text-xs text-gray-400 mt-0.5">Status: {{ membership.get_status_display }}</p>
   </div>
 
-  <a href="{% url 'logout' %}" class="mt-6 text-gray-500 text-xs underline hover:text-gray-400">Sign out</a>
+  <form method="post" action="/auth/logout/" style="display:inline">{% csrf_token %}<button type="submit" class="mt-6 text-gray-500 text-xs underline hover:text-gray-400">Sign out</button></form>
 
 </div>
 {% endblock %}

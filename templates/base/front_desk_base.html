@@ -38,7 +38,9 @@
       </div>
       <div class="flex items-center gap-4">
         <span class="text-sm text-white/70">{{ request.user.get_full_name|default:request.user.email }}</span>
-        <a href="/auth/logout/" class="text-xs accent-btn px-3 py-1.5 rounded-lg font-medium transition-colors">Sign Out</a>
+        <form method="post" action="/auth/logout/">{% csrf_token %}
+          <button type="submit" class="text-xs accent-btn px-3 py-1.5 rounded-lg font-medium transition-colors">Sign Out</button>
+        </form>
       </div>
     </div>
 
