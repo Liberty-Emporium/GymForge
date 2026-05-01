@@ -94,7 +94,7 @@ _SUPPLEMENT_KEYWORDS = (
 
 def _get_member_profile(request):
     try:
-        return request.user.memberprofile
+        return request.user.member_profile
     except MemberProfile.DoesNotExist:
         return None
 

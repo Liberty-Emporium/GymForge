@@ -80,6 +80,14 @@ def _get_profile():
         return None
 
 
+def _get_member_profile(request):
+    """Return the MemberProfile for the logged-in member, or None."""
+    try:
+        return request.user.member_profile
+    except Exception:
+        return None
+
+
 def _gym_name(profile):
     return profile.gym_name if profile else 'your gym'
 
@@ -183,7 +191,7 @@ def register(request):
 @_member_required
 def register_waiver(request):
     try:
-        member_profile = request.user.memberprofile
+        member_profile = request.user.member_profile
     except MemberProfile.DoesNotExist:
         return redirect('members:register')
 
@@ -215,7 +223,7 @@ def register_waiver(request):
 @_member_required
 def register_plans(request):
     try:
-        member_profile = request.user.memberprofile
+        member_profile = request.user.member_profile
     except MemberProfile.DoesNotExist:
         return redirect('members:register')
 
@@ -257,7 +265,7 @@ def register_plans(request):
 @_member_required
 def register_intake(request):
     try:
-        member_profile = request.user.memberprofile
+        member_profile = request.user.member_profile
     except MemberProfile.DoesNotExist:
         return redirect('members:register')
 
@@ -282,7 +290,7 @@ def register_intake_send(request):
     from apps.ai_coach.client import GymForgeAIClient
 
     try:
-        member_profile = request.user.memberprofile
+        member_profile = request.user.member_profile
     except MemberProfile.DoesNotExist:
         return HttpResponse(status=400)
 
@@ -318,7 +326,7 @@ def register_intake_complete(request):
     from apps.ai_coach.models import MemberAIConversation
 
     try:
-        member_profile = request.user.memberprofile
+        member_profile = request.user.member_profile
     except MemberProfile.DoesNotExist:
         return redirect('members:register')
 
@@ -340,7 +348,7 @@ def register_intake_complete(request):
 @_member_required
 def register_welcome(request):
     try:
-        member_profile = request.user.memberprofile
+        member_profile = request.user.member_profile
     except MemberProfile.DoesNotExist:
         return redirect('members:register')
 
@@ -373,7 +381,7 @@ def app_unavailable(request):
 def home(request):
     """Member app home screen — all sections."""
     try:
-        member_profile = request.user.memberprofile
+        member_profile = request.user.member_profile
     except MemberProfile.DoesNotExist:
         return redirect('members:register')
 
