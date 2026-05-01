@@ -26,7 +26,7 @@ urlpatterns = [
     path('analytics/',                      views.analytics_view,         name='analytics'),
     path('inventory/',                      views.inventory_view,         name='inventory'),
     path('settings/',                       views.gym_settings,           name='gym_settings'),
-    path('leads/',                          include('apps.leads.urls')),
+    path('leads/',                          include(('apps.leads.urls', 'leads'), namespace='leads')),
     # Shop management
     path('shop/',                           shop_views.owner_product_list,   name='shop_products'),
     path('shop/new/',                       shop_views.owner_product_form,   name='shop_product_new'),

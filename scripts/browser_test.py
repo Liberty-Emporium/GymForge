@@ -90,7 +90,7 @@ ROLES = {
             ("/app/",              "member home",     ["Welcome", "Dashboard", "Gym"]),
             ("/app/classes/",      "class schedule",  ["Class", "Schedule", "Book"]),
             ("/app/workouts/",     "workout history", ["Workout"]),
-            ("/app/my-bookings/",  "my bookings",     ["Booking", "Class"]),
+            ("/app/classes/my-bookings/", "my bookings", ["Booking", "Class"]),
         ],
     },
 }
