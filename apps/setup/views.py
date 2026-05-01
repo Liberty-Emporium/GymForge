@@ -656,21 +656,44 @@ def create_platform_admin(request):
 
 def db_status(request):
     """
-    Shows which tables are missing from the DB vs what Django expects.
-    Temporary diagnostic endpoint — safe, read-only.
+    Shows missing tables AND missing columns. Temporary diagnostic — read-only.
     """
     from django.db import connection
     from django.apps import apps as django_apps
-    existing = set(connection.introspection.table_names())
-    expected = {m._meta.db_table for m in django_apps.get_models()}
-    missing = sorted(expected - existing)
-    lines = [f'DB tables: {len(existing)} present, {len(missing)} missing', '']
-    if missing:
+    existing_tables = set(connection.introspection.table_names())
+    expected_tables = {m._meta.db_table for m in django_apps.get_models()}
+    missing_tables = sorted(expected_tables - existing_tables)
+
+    # Check columns for existing tables
+    missing_cols = []
+    with connection.cursor() as cursor:
+        for model in django_apps.get_models():
+            table = model._meta.db_table
+            if table not in existing_tables:
+                continue
+            try:
+                cols = {c.name for c in connection.introspection.get_table_description(cursor, table)}
+                for field in model._meta.local_fields:
+                    col = field.column
+                    if col not in cols:
+                        missing_cols.append(f'{table}.{col}')
+            except Exception:
+                pass
+
+    lines = [f'DB tables: {len(existing_tables)} present']
+    lines.append(f'Missing tables: {len(missing_tables)}')
+    lines.append(f'Missing columns: {len(missing_cols)}')
+    lines.append('')
+    if missing_tables:
         lines.append('MISSING TABLES:')
-        for t in missing:
+        for t in missing_tables:
             lines.append(f'  - {t}')
-    else:
-        lines.append('All expected tables exist!')
+    if missing_cols:
+        lines.append('MISSING COLUMNS:')
+        for c in missing_cols:
+            lines.append(f'  - {c}')
+    if not missing_tables and not missing_cols:
+        lines.append('Everything looks good!')
     return HttpResponse('\n'.join(lines), content_type='text/plain')
 
 
