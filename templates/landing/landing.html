@@ -345,11 +345,10 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
       {% for tier in tiers %}
       {# Feature the middle tier on 3-column layouts #}
-      {% with is_featured=forloop.counter == 2 and tiers|length == 3 %}
       <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 flex flex-col card-lift
-                  {% if is_featured %}tier-featured{% endif %}">
+                  {% if forloop.counter == 2 and tiers|length == 3 %}tier-featured{% endif %}">
 
-        {% if is_featured %}
+        {% if forloop.counter == 2 and tiers|length == 3 %}
         <div class="text-center mb-4">
           <span class="btn-accent text-xs font-semibold px-3 py-1 rounded-full">Most Popular</span>
         </div>
@@ -396,12 +395,11 @@
 
         {% if 'contact' in active_sections %}
         <a href="#contact"
-           class="{% if is_featured %}btn-accent{% else %}btn-outline-accent{% endif %} text-center px-5 py-2.5 rounded-xl font-semibold text-sm mt-auto block">
+           class="{% if forloop.counter == 2 and tiers|length == 3 %}btn-accent{% else %}btn-outline-accent{% endif %} text-center px-5 py-2.5 rounded-xl font-semibold text-sm mt-auto block">
           Get Started
         </a>
         {% endif %}
       </div>
-      {% endwith %}
       {% endfor %}
     </div>
   </div>
