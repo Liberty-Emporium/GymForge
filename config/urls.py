@@ -25,6 +25,7 @@ urlpatterns = [
 
     # Staff portals — tenant schema
     path('owner/', include('apps.gym_owner.urls')),
+    path('owner/leads/', include('apps.leads.urls', namespace='leads')),
     path('owner/payroll/', include('apps.payroll.urls')),
     path('manager/', include('apps.manager.urls')),
     path('trainer/', include('apps.trainer.urls')),
