@@ -1,62 +1,33 @@
 """
 Gym landing page — publicly accessible, no login required.
-
-Lives at the root of each gym's subdomain (e.g. ironhouse.gymforge.com/).
-All content is driven by GymProfile + tenant-schema data.
-GymForge branding must never appear on this page.
+Single-tenant: reads GymProfile directly, no tenant routing needed.
 """
-from django.shortcuts import render, redirect
-from django.http import HttpResponse, HttpResponseNotAllowed
-from django.views.decorators.http import require_POST
+from django.shortcuts import render
+from django.http import HttpResponseNotAllowed
 
-
-# Sections rendered when GymProfile.landing_page_sections is empty
 DEFAULT_SECTIONS = ['hero', 'about', 'classes', 'trainers', 'pricing', 'contact']
 
 
 def landing_page(request):
-    """
-    Render the gym's public landing page.
-
-    Sections are toggled via GymProfile.landing_page_sections JSON.
-    Returns a minimal "coming soon" response if landing_page_active is False.
-    """
     from apps.core.models import GymProfile, Service, Location
+    from apps.gym.models import GymConfig
 
-    # Guard: public schema has no tenant tables — serve GymForge marketing page.
-    import os
-    tenant = getattr(request, 'tenant', None)
-    if tenant is None:
+    # If setup hasn't been run yet, show the GymForge marketing/placeholder page
+    gym = GymConfig.get()
+    if gym is None:
         return render(request, 'landing/gymforge_home.html')
+
     try:
-        from django_tenants.utils import get_public_schema_name
-        is_public = tenant.schema_name == get_public_schema_name()
+        profile = GymProfile.objects.first()
     except Exception:
-        is_public = True
+        profile = None
 
-    # Also show marketing page when the request host is the Railway platform domain
-    railway_domain = os.environ.get('RAILWAY_PUBLIC_DOMAIN', '')
-    host = request.get_host().split(':')[0]
-    is_platform_host = railway_domain and host == railway_domain
-
-    if is_public or is_platform_host:
-        return render(request, 'landing/gymforge_home.html')
-
-    try:
-        profile = GymProfile.objects.get()
-    except GymProfile.DoesNotExist:
-        # Tenant exists but provisioning hasn't completed yet
-        return render(request, 'landing/landing.html', {
-            'profile': None,
-            'active_sections': [],
-        })
+    if not profile:
+        return render(request, 'landing/coming_soon.html', {'profile': None})
 
     if not profile.landing_page_active:
         return render(request, 'landing/coming_soon.html', {'profile': profile})
 
-    # ------------------------------------------------------------------
-    # Resolve active sections
-    # ------------------------------------------------------------------
     sections_config = profile.landing_page_sections
     if sections_config:
         active_sections = [
@@ -72,9 +43,6 @@ def landing_page(request):
         'active_sections': active_sections,
     }
 
-    # ------------------------------------------------------------------
-    # Fetch only what each active section needs
-    # ------------------------------------------------------------------
     if 'about' in active_sections:
         context['services'] = Service.objects.filter(is_active=True)
 
@@ -109,17 +77,11 @@ def landing_page(request):
 
 
 def submit_lead(request):
-    """
-    HTMX endpoint — create a Lead record from the contact form.
-
-    Returns:
-        - On validation error: re-renders the form partial with errors.
-        - On success: renders the success partial (replaces the form).
-    """
     if request.method != 'POST':
         return HttpResponseNotAllowed(['POST'])
 
     from apps.leads.models import Lead
+    from django.shortcuts import render
 
     first_name = request.POST.get('first_name', '').strip()
     last_name  = request.POST.get('last_name', '').strip()
@@ -136,20 +98,12 @@ def submit_lead(request):
 
     if errors:
         return render(request, 'landing/partials/lead_form.html', {
-            'errors': errors,
-            'post':   request.POST,
+            'errors': errors, 'post': request.POST,
         })
 
-    # Use 'website' — closest source choice to landing_page in the model
     Lead.objects.create(
-        first_name=first_name,
-        last_name=last_name,
-        email=email,
-        phone=phone,
-        source='website',
-        status='new',
+        first_name=first_name, last_name=last_name,
+        email=email, phone=phone,
+        source='website', status='new',
     )
-
-    return render(request, 'landing/partials/lead_success.html', {
-        'first_name': first_name,
-    })
+    return render(request, 'landing/partials/lead_success.html', {'first_name': first_name})

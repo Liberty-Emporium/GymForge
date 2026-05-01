@@ -1,11 +1,9 @@
 django>=5.2,<6.0
-django-tenants
 djangorestframework
 djangorestframework-simplejwt
 django-anymail[sendgrid]
 django-storages[boto3]
 django-celery-beat
-python-crontab
 django-filter
 django-extensions
 celery[redis]

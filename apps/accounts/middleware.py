@@ -1,10 +1,9 @@
 from django.shortcuts import redirect
 from django.utils import timezone
 
-
-# Paths that bypass subscription/trial enforcement entirely
+# Paths that bypass subscription/trial enforcement
 EXEMPT_PREFIXES = (
-    '/billing/', '/auth/', '/api/', '/platform/',
+    '/billing/', '/auth/', '/api/',
     '/django-admin/', '/health/', '/setup/',
     '/app/register/', '/app/unavailable/',
 )
@@ -12,51 +11,49 @@ EXEMPT_PREFIXES = (
 
 class GymAccessMiddleware:
     """
-    Enforces GymForge trial and subscription rules on every request.
+    Enforces trial and subscription rules for the single-tenant gym deploy.
 
     Logic
     -----
-    1. If the request has no tenant (public schema), do nothing.
-    2. If the path is exempt (billing, auth, api, platform), do nothing.
-    3. If the tenant is on trial and 14+ days have elapsed, expire the trial
-       and set subscription_status = 'suspended'.
-    4. If the tenant is not active:
-       - Gym owners are redirected to the subscribe page.
-       - Members are redirected to a "service unavailable" page.
-       - Other staff get the same redirect as gym owners.
+    1. If path is exempt, pass through.
+    2. If GymConfig doesn't exist yet (pre-setup), pass through.
+    3. If trial has elapsed 14+ days, expire it.
+    4. If gym is not accessible, redirect based on role.
     """
 
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
-        if not hasattr(request, 'tenant'):
-            return self.get_response(request)
-
         if any(request.path.startswith(p) for p in EXEMPT_PREFIXES):
             return self.get_response(request)
 
-        tenant = request.tenant
+        from apps.gym.models import GymConfig
+        gym = GymConfig.get()
 
-        # --- Trial expiry check ---
-        if tenant.trial_active:
-            days_elapsed = (timezone.now() - tenant.trial_start_date).days
+        if gym is None:
+            # Setup hasn't been run yet — redirect to setup wizard
+            if not request.path.startswith('/setup/'):
+                return redirect('/setup/')
+            return self.get_response(request)
+
+        # Trial expiry check
+        if gym.trial_active:
+            days_elapsed = (timezone.now() - gym.trial_start_date).days
             if days_elapsed >= 14:
-                tenant.trial_active = False
-                tenant.subscription_status = 'suspended'
-                tenant.save(update_fields=['trial_active', 'subscription_status'])
+                gym.trial_active = False
+                gym.subscription_status = 'suspended'
+                gym.save(update_fields=['trial_active', 'subscription_status'])
 
-        # --- Access enforcement ---
-        if not tenant.trial_active and tenant.subscription_status != 'active':
+        # Access enforcement
+        if not gym.is_accessible:
             if not request.user.is_authenticated:
                 return self.get_response(request)
 
             if request.user.role == 'member':
                 if not request.path.startswith('/app/unavailable/'):
                     return redirect('/app/unavailable/')
-
             else:
-                # gym_owner and all staff roles
                 if not request.path.startswith('/billing/'):
                     return redirect('/billing/subscribe/')
 

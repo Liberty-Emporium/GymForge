@@ -16,11 +16,11 @@ from celery import shared_task
 from django.conf import settings
 from django.core.mail import send_mail
 from django.utils import timezone
-from django_tenants.utils import schema_context
+# single-tenant: schema_context removed
 
 from apps.billing.models import NoShowCharge
 from apps.scheduling.models import Booking
-from apps.tenants.models import GymTenant
+# single-tenant: GymTenant removed
 
 stripe.api_key = getattr(settings, 'STRIPE_SECRET_KEY', '')
 
@@ -123,38 +123,28 @@ def process_no_shows():
       - no_show_fee_charged=False
       - class_session.end_datetime < now - 30 minutes
     """
+    # Single-tenant: no loop over tenants, query directly
     cutoff = timezone.now() - timedelta(minutes=30)
-    tenants = GymTenant.objects.filter(subscription_status__in=['trial', 'active'])
-
-    for tenant in tenants:
-        try:
-            with schema_context(tenant.schema_name):
-                bookings = (
-                    Booking.objects
-                    .filter(
-                        status='confirmed',
-                        no_show_fee_charged=False,
-                        class_session__end_datetime__lt=cutoff,
-                    )
-                    .select_related('member__user', 'class_session')
-                    .prefetch_related('member__memberships__tier')
-                )
-                for booking in bookings:
-                    booking.status = 'no_show'
-                    booking.save(update_fields=['status'])
-
-                    membership = booking.member.active_membership
-                    if membership and membership.tier.no_show_fee > 0:
-                        charge_no_show_fee(
-                            booking,
-                            membership.tier.no_show_fee,
-                            'no_show',
-                        )
-                    else:
-                        booking.no_show_fee_charged = True
-                        booking.save(update_fields=['no_show_fee_charged'])
-
-        except Exception:
-            logger.exception(
-                'process_no_shows failed for tenant %s', tenant.schema_name
+    try:
+        bookings = (
+            Booking.objects
+            .filter(
+                status='confirmed',
+                no_show_fee_charged=False,
+                class_session__end_datetime__lt=cutoff,
             )
+            .select_related('member__user', 'class_session')
+            .prefetch_related('member__memberships__tier')
+        )
+        for booking in bookings:
+            booking.status = 'no_show'
+            booking.save(update_fields=['status'])
+
+            membership = booking.member.active_membership
+            if membership and membership.tier.no_show_fee > 0:
+                charge_no_show_fee(booking, membership.tier.no_show_fee, 'no_show')
+            else:
+                booking.no_show_fee_charged = True
+                booking.save(update_fields=['no_show_fee_charged'])
+    except Exception:
+        logger.exception('process_no_shows failed')

@@ -1,46 +1,18 @@
 """
-GymForge — Production Settings (Railway)
+GymForge — Production Settings (Railway single-tenant deploy)
 """
 from .base import *
 import os
-import dj_database_url
-from decouple import config
 
 DEBUG = os.environ.get('DJANGO_DEBUG', '') == 'True'
 
 ALLOWED_HOSTS = [
-    '.gymforge.com',
-    'gymforge.com',
     '.railway.app',
-    config('RAILWAY_PUBLIC_DOMAIN', default=''),
+    os.environ.get('RAILWAY_PUBLIC_DOMAIN', ''),
+    os.environ.get('CUSTOM_DOMAIN', ''),  # e.g. app.ironhousegym.com
 ]
-
-# Fall back to public schema when the request domain isn't in GymDomain
-# (covers the Railway preview URL and any unregistered domains)
-SHOW_PUBLIC_IF_NO_TENANT_FOUND = True
-
-# ---------------------------------------------------------------------------
-# Database — Railway provides DATABASE_URL automatically
-# ---------------------------------------------------------------------------
-_raw_db_url = os.environ.get('DATABASE_URL', '')
-if _raw_db_url:
-    # Parse the URL directly; keep the django-tenants engine
-    _db_from_env = dj_database_url.parse(_raw_db_url, conn_max_age=600, conn_health_checks=True)
-    DATABASES['default'].update({
-        'NAME': _db_from_env['NAME'],
-        'USER': _db_from_env['USER'],
-        'PASSWORD': _db_from_env['PASSWORD'],
-        'HOST': _db_from_env['HOST'],
-        'PORT': _db_from_env['PORT'],
-        'CONN_MAX_AGE': 600,
-        'CONN_HEALTH_CHECKS': True,
-    })
-
-# ---------------------------------------------------------------------------
-# Static Files — whitenoise
-# ---------------------------------------------------------------------------
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+# Filter out empty strings
+ALLOWED_HOSTS = [h for h in ALLOWED_HOSTS if h]
 
 # ---------------------------------------------------------------------------
 # File Storage — Cloudflare R2
@@ -48,10 +20,12 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
 # ---------------------------------------------------------------------------
-# Celery — run tasks synchronously (no worker/Redis needed for demo)
+# Celery — no worker on Railway by default; run tasks synchronously
+# Override by setting ASYNC_TASKS=True and adding a worker service
 # ---------------------------------------------------------------------------
-CELERY_TASK_ALWAYS_EAGER = True
-CELERY_TASK_EAGER_PROPAGATES = True
+if not os.environ.get('ASYNC_TASKS'):
+    CELERY_TASK_ALWAYS_EAGER = True
+    CELERY_TASK_EAGER_PROPAGATES = True
 
 # ---------------------------------------------------------------------------
 # Security

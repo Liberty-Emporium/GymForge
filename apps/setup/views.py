@@ -13,7 +13,7 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.views.decorators.http import require_POST
 
-from apps.tenants.models import GymTenant
+from apps.gym.models import GymConfig
 from .tasks import provision_gym
 
 
@@ -123,18 +123,11 @@ def _account_ctx(wizard):
 
 def _generate_schema_name(gym_name):
     """
-    Derive a unique PostgreSQL schema name from the gym name.
-    e.g. "Iron House Gym!" → "iron_house_gym"
+    Derive a URL-safe slug from the gym name.
+    e.g. "Iron House Gym!" → "iron-house-gym"
     """
-    base = re.sub(r'[^a-z0-9]+', '_', gym_name.lower()).strip('_')[:50]
-    if not base:
-        base = 'gym'
-    schema_name = base
-    n = 1
-    while GymTenant.objects.filter(schema_name=schema_name).exists():
-        schema_name = f'{base}_{n}'
-        n += 1
-    return schema_name
+    slug = re.sub(r'[^a-z0-9]+', '-', gym_name.lower()).strip('-')[:50]
+    return slug or 'gym'
 
 
 def _location_for_template(location):
@@ -229,13 +222,13 @@ def step1(request):
                         dest.write(chunk)
                 logo_path = f'wizard/{fname}'
 
-            schema_name = wizard.get('schema_name') or _generate_schema_name(gym_name)
+            slug = wizard.get('schema_name') or _generate_schema_name(gym_name)
             # Regenerate if gym_name changed
             prev_name = wizard.get('identity', {}).get('gym_name', '')
             if prev_name != gym_name:
-                schema_name = _generate_schema_name(gym_name)
+                slug = _generate_schema_name(gym_name)
 
-            _save(request, 'schema_name', schema_name)
+            _save(request, 'schema_name', slug)
             _save(request, 'identity', {
                 'gym_name':      gym_name,
                 'tagline':       tagline,
@@ -476,15 +469,13 @@ def step7(request):
     if not wizard.get('identity'):
         return redirect('setup:step1')
 
-    schema_name = wizard.get('schema_name', '')
+    slug        = wizard.get('schema_name', '')
     identity    = wizard.get('identity', {})
     locations   = wizard.get('locations', [])
     owner       = wizard.get('owner', {})
     plans       = wizard.get('plans', [])
     services    = wizard.get('services', {})
     roles       = wizard.get('roles', {})
-
-    subdomain = f"{schema_name}.gymforge.com"
 
     return render(request, 'owner/step7_preview.html', {
         'step': 7, 'wizard': wizard,
@@ -494,8 +485,8 @@ def step7(request):
         'plans': plans,
         'services': services,
         'roles': roles,
-        'schema_name': schema_name,
-        'subdomain': subdomain,
+        'schema_name': slug,
+        'subdomain': slug,  # no subdomain routing in single-tenant
         'staff_roles': STAFF_ROLES,
     })
 
@@ -534,7 +525,7 @@ def confirm(request):
         # Clear wizard session
         request.session.pop('wizard', None)
         request.session.modified = True
-        return redirect(f'/auth/login/?setup=done&gym={info.get("schema_name", "")}')
+        return redirect(f'/auth/login/?setup=done&gym={info.get("slug", "")}')
 
     request.session.pop('wizard', None)
     request.session.modified = True
@@ -562,7 +553,7 @@ def task_status(request, task_id):
             info = result.get()
             response = HttpResponse('')
             response['HX-Redirect'] = (
-                f'/auth/login/?setup=done&gym={info.get("schema_name", "")}'
+                f'/auth/login/?setup=done&gym={info.get("slug", "")}'
             )
             return response
         else:
@@ -618,27 +609,12 @@ def partial_plan_row(request):
 # ---------------------------------------------------------------------------
 
 def repair_domains(request):
-    """
-    Adds the current request host as a secondary GymDomain for every tenant
-    that doesn't already have it.  Hit this once after deploying to a new
-    Railway URL so the gym portals are reachable without a custom domain.
-
-    Safe to call multiple times (uses get_or_create).
-    """
-    from apps.tenants.models import GymTenant, GymDomain
-    host = request.get_host().split(':')[0]  # strip port if any
-    tenants = GymTenant.objects.exclude(schema_name='public')
-    results = []
-    for tenant in tenants:
-        obj, created = GymDomain.objects.get_or_create(
-            domain=host,
-            tenant=tenant,
-            defaults={'is_primary': False},
-        )
-        results.append(f'{"ADDED" if created else "EXISTS"}: {host} → {tenant.gym_name}')
-
-    body = '\n'.join(results) or 'No tenants found.'
-    return HttpResponse(body, content_type='text/plain')
+    """No-op in single-tenant mode — domain routing is handled by Railway/ALLOWED_HOSTS."""
+    from apps.gym.models import GymConfig
+    gym = GymConfig.get()
+    if gym:
+        return HttpResponse(f'Single-tenant mode: {gym.gym_name} — no domain repair needed.', content_type='text/plain')
+    return HttpResponse('No gym configured yet. Run /setup/ first.', content_type='text/plain')
 
 
 # ---------------------------------------------------------------------------
@@ -680,19 +656,15 @@ def create_platform_admin(request):
 
 def create_demo_users(request):
     """
-    Creates one demo user per role for the most recently provisioned tenant.
-    Also creates a MemberProfile in that tenant's schema and enables member_app_active.
-    Safe to call multiple times — skips users that already exist.
-
+    Creates one demo user per role. Single-tenant: no schema_context needed.
     Credentials: <role>@demo.gymforge.com / Demo2026!
     """
     from apps.accounts.models import User
-    from apps.tenants.models import GymTenant
-    from django_tenants.utils import schema_context
+    from apps.gym.models import GymConfig
 
-    tenant = GymTenant.objects.exclude(schema_name='public').order_by('-created_at').first()
-    if not tenant:
-        return HttpResponse('No tenant found.', content_type='text/plain', status=404)
+    gym = GymConfig.get()
+    if not gym:
+        return HttpResponse('No gym configured yet. Run /setup/ first.', content_type='text/plain', status=404)
 
     demo_roles = [
         ('manager',      'Manager',      'Demo'),
@@ -703,39 +675,31 @@ def create_demo_users(request):
         ('member',       'Member',       'Demo'),
     ]
 
-    lines = [f'Tenant: {tenant.gym_name} ({tenant.schema_name})', '']
+    lines = [f'Gym: {gym.gym_name}', '']
     password = 'Demo2026!'
 
     for role, first, last in demo_roles:
         email = f'{role}@demo.gymforge.com'
-        username = email
         if User.objects.filter(email__iexact=email).exists():
             lines.append(f'EXISTS : {email}')
             user = User.objects.get(email__iexact=email)
         else:
             user = User.objects.create_user(
-                username=username,
-                email=email,
-                password=password,
-                first_name=first,
-                last_name=last,
-                role=role,
-                is_active=True,
+                username=email, email=email, password=password,
+                first_name=first, last_name=last,
+                role=role, is_active=True,
             )
             lines.append(f'CREATED: {email} / {password}')
 
-        # Create MemberProfile inside tenant schema for the member role
         if role == 'member':
-            with schema_context(tenant.schema_name):
-                from apps.members.models import MemberProfile
-                if not MemberProfile.objects.filter(user=user).exists():
-                    MemberProfile.objects.create(user=user)
-                    lines.append('         → MemberProfile created in tenant schema')
+            from apps.members.models import MemberProfile
+            if not MemberProfile.objects.filter(user=user).exists():
+                MemberProfile.objects.create(user=user)
+                lines.append('         → MemberProfile created')
 
-    # Enable member app for the demo
-    if not tenant.member_app_active:
-        tenant.member_app_active = True
-        tenant.save(update_fields=['member_app_active'])
+    if not gym.member_app_active:
+        gym.member_app_active = True
+        gym.save(update_fields=['member_app_active'])
         lines.append('\nmember_app_active set to True')
 
     lines.append('\nAll done — log in at /auth/login/')
