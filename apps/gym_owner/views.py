@@ -666,7 +666,6 @@ FEATURE_KEYS = [
 ]
 
 
-@gym_owner_required
 # Secret fields shown in the settings panel.
 # Each entry: (field_key, display_label, placeholder_hint)
 # These are stored in GymConfig.api_secrets as a JSON dict.
@@ -698,6 +697,7 @@ def _mask(value):
     return value[:4] + '*' * (len(value) - 8) + value[-4:]
 
 
+@gym_owner_required
 def gym_settings(request):
     from apps.core.models import GymProfile
     from apps.gym.models import GymConfig
