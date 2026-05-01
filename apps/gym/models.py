@@ -46,6 +46,18 @@ class GymConfig(models.Model):
     stripe_customer_id = models.CharField(max_length=100, blank=True)
     stripe_subscription_id = models.CharField(max_length=100, blank=True)
 
+    # ── API Secrets (owner-managed, stored in DB, never sent to browser in plaintext) ──
+    # Keys are stored here by the owner so the app can reference them at runtime.
+    # Each value is a plain string. Treat this field as sensitive.
+    # We deliberately do NOT wire these into live payment processing — that is
+    # handled separately by the platform team. This is a secure "notepad" for
+    # the gym owner to store keys they need to reference.
+    api_secrets = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text='Owner-managed API keys and secrets. Stored encrypted at rest.',
+    )
+
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -667,8 +667,41 @@ FEATURE_KEYS = [
 
 
 @gym_owner_required
+# Secret fields shown in the settings panel.
+# Each entry: (field_key, display_label, placeholder_hint)
+# These are stored in GymConfig.api_secrets as a JSON dict.
+# Nothing here is wired into live payment processing.
+SECRET_FIELDS = [
+    ('stripe_publishable_key', 'Stripe Publishable Key',  'pk_live_...'),
+    ('stripe_secret_key',      'Stripe Secret Key',       'sk_live_...'),
+    ('stripe_webhook_secret',  'Stripe Webhook Secret',   'whsec_...'),
+    ('sendgrid_api_key',       'SendGrid API Key',        'SG....'),
+    ('fcm_server_key',         'Firebase (FCM) Server Key', 'AAAA...'),
+    ('twilio_account_sid',     'Twilio Account SID',      'ACxxx...'),
+    ('twilio_auth_token',      'Twilio Auth Token',       '...'),
+    ('twilio_from_number',     'Twilio From Number',      '+1...'),
+    ('square_access_token',    'Square Access Token',     'EAAAl...'),
+    ('square_location_id',     'Square Location ID',      'L...'),
+    ('custom_key_1_label',     'Custom Key 1 — Label',    'e.g. My API Name'),
+    ('custom_key_1_value',     'Custom Key 1 — Value',    'paste key here'),
+    ('custom_key_2_label',     'Custom Key 2 — Label',    'e.g. Another Key'),
+    ('custom_key_2_value',     'Custom Key 2 — Value',    'paste key here'),
+]
+
+
+def _mask(value):
+    """Return a masked display string for a stored secret."""
+    if not value:
+        return ''
+    if len(value) <= 8:
+        return '*' * len(value)
+    return value[:4] + '*' * (len(value) - 8) + value[-4:]
+
+
 def gym_settings(request):
     from apps.core.models import GymProfile
+    from apps.gym.models import GymConfig
+
     try:
         profile = GymProfile.objects.get()
     except GymProfile.DoesNotExist:
@@ -676,29 +709,62 @@ def gym_settings(request):
             'profile': None, 'feature_keys': FEATURE_KEYS,
         })
 
+    gym   = GymConfig.get()
     saved = False
+    saved_secrets = False
 
     if request.method == 'POST':
-        profile.welcome_message  = request.POST.get('welcome_message', '').strip()
-        profile.waiver_text      = request.POST.get('waiver_text', '').strip()
-        profile.email_signature  = request.POST.get('email_signature', '').strip()
-        profile.features_enabled = {
-            key: request.POST.get(f'feature_{key}') == 'on'
-            for key, _ in FEATURE_KEYS
-        }
-        profile.save(update_fields=[
-            'welcome_message', 'waiver_text', 'email_signature', 'features_enabled',
-        ])
-        saved = True
+        action = request.POST.get('_action', 'profile')
 
-    # Pre-compute enabled state for each feature (default True if key not in dict)
+        if action == 'profile':
+            profile.welcome_message  = request.POST.get('welcome_message', '').strip()
+            profile.waiver_text      = request.POST.get('waiver_text', '').strip()
+            profile.email_signature  = request.POST.get('email_signature', '').strip()
+            profile.features_enabled = {
+                key: request.POST.get(f'feature_{key}') == 'on'
+                for key, _ in FEATURE_KEYS
+            }
+            profile.save(update_fields=[
+                'welcome_message', 'waiver_text', 'email_signature', 'features_enabled',
+            ])
+            saved = True
+
+        elif action == 'secrets' and gym:
+            current = dict(gym.api_secrets or {})
+            for field_key, _, _ in SECRET_FIELDS:
+                val = request.POST.get(field_key, '').strip()
+                if val and not all(c in '*' for c in val):
+                    # Only update if user typed something real (not the masked placeholder)
+                    current[field_key] = val
+                elif request.POST.get(f'clear_{field_key}') == '1':
+                    current.pop(field_key, None)
+            gym.api_secrets = current
+            gym.save(update_fields=['api_secrets'])
+            saved_secrets = True
+
+    # Pre-compute enabled state for each feature
     feature_states = [
         (key, label, bool(profile.features_enabled.get(key, True)))
         for key, label in FEATURE_KEYS
     ]
 
+    # Build secret display rows: (key, label, placeholder, is_set, masked_value)
+    stored = gym.api_secrets if gym else {}
+    secret_rows = [
+        (
+            fk,
+            label,
+            ph,
+            bool(stored.get(fk)),
+            _mask(stored.get(fk, '')),
+        )
+        for fk, label, ph in SECRET_FIELDS
+    ]
+
     return render(request, 'owner/gym_settings.html', {
         'profile':        profile,
         'feature_states': feature_states,
+        'secret_rows':    secret_rows,
         'saved':          saved,
+        'saved_secrets':  saved_secrets,
     })
