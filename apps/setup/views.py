@@ -747,3 +747,50 @@ def create_demo_users(request):
 
     lines.append('\nAll done — log in at /auth/login/')
     return HttpResponse('\n'.join(lines), content_type='text/plain')
+
+
+def debug_view(request):
+    """Temporary debug — run a failing view and return the traceback."""
+    import traceback
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    
+    results = {}
+    
+    # Test leads pipeline
+    try:
+        from apps.leads.models import Lead, LeadFollowUp
+        from apps.core.models import Location
+        leads = list(Lead.objects.select_related('assigned_to', 'location')[:3])
+        results['leads_query'] = f'OK ({len(leads)} leads)'
+        methods = LeadFollowUp.METHOD_CHOICES
+        results['method_choices'] = f'OK: {methods}'
+        locs = list(Location.objects.filter(is_active=True))
+        results['locations'] = f'OK: {len(locs)} locations'
+    except Exception as e:
+        results['leads_error'] = traceback.format_exc()
+    
+    # Test member home
+    try:
+        from apps.gym.models import GymConfig
+        gym = GymConfig.get()
+        results['gym_config'] = f'OK: {gym} member_app_active={gym.member_app_active if gym else None}'
+    except Exception as e:
+        results['gym_error'] = traceback.format_exc()
+    
+    # Test workout view
+    try:
+        from apps.members.models import WorkoutLog, MemberProfile
+        mp = MemberProfile.objects.first()
+        if mp:
+            logs = list(WorkoutLog.objects.filter(member=mp)[:3])
+            results['workoutlog'] = f'OK ({len(logs)} logs)'
+        else:
+            results['workoutlog'] = 'No MemberProfile found'
+    except Exception as e:
+        results['workoutlog_error'] = traceback.format_exc()
+    
+    lines = ['DEBUG RESULTS', '='*40]
+    for k, v in results.items():
+        lines.append(f'\n{k}:\n{v}')
+    return HttpResponse('\n'.join(lines), content_type='text/plain')

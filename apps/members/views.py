@@ -345,7 +345,9 @@ def register_welcome(request):
         return redirect('members:register')
 
     profile = _get_profile()
-    app_active = getattr(getattr(request, 'tenant', None), 'member_app_active', False)
+    from apps.gym.models import GymConfig
+    _gym = GymConfig.get()
+    app_active = _gym.member_app_active if _gym else False
 
     return render(request, 'member/register_welcome.html', {
         'profile': profile,
@@ -375,7 +377,9 @@ def home(request):
     except MemberProfile.DoesNotExist:
         return redirect('members:register')
 
-    app_active = getattr(getattr(request, 'tenant', None), 'member_app_active', False)
+    from apps.gym.models import GymConfig
+    _gym = GymConfig.get()
+    app_active = _gym.member_app_active if _gym else False
     if not app_active:
         return redirect('members:app_unavailable')
 
