@@ -1,6 +1,29 @@
 from django.db import models
 
 
+class Plan(models.Model):
+    """
+    GymForge SaaS subscription plans (Starter / Growth / Pro).
+    One row per plan offered to gym owners.
+    """
+    name             = models.CharField(max_length=100, unique=True)
+    price_monthly    = models.DecimalField(max_digits=8, decimal_places=2, default=0)
+    max_members      = models.IntegerField(default=0, help_text='0 = unlimited')
+    max_locations    = models.IntegerField(default=1)
+    stripe_price_id  = models.CharField(max_length=200, blank=True)
+    features         = models.JSONField(default=list, blank=True)
+    is_active        = models.BooleanField(default=True)
+    created_at       = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['price_monthly']
+        verbose_name = 'Plan'
+        verbose_name_plural = 'Plans'
+
+    def __str__(self):
+        return f'{self.name} (${self.price_monthly}/mo)'
+
+
 class AuditLog(models.Model):
     """
     Immutable audit trail for the gym deployment.
